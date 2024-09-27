@@ -1,18 +1,13 @@
 import {HttpErrors} from '@loopback/rest';
 // import isemail from 'isemail';
-import {Credentials, NewUserRequest} from '../utils/type-schema';
+import {Credentials} from '../utils/type-schema';
 
 export function validateCredentials(credentials: Credentials) {
+  console.log('credentials ----->', credentials);
   if (!credentials.password || credentials.password.length < 6) {
     throw new HttpErrors.UnprocessableEntity(
       'password must be minimum 6 characters',
     );
-  }
-}
-
-export function validateUserCreateField(user: NewUserRequest) {
-  if (!user.dob) {
-    throw new HttpErrors.UnprocessableEntity('Dob field can not be empty');
   }
 }
 

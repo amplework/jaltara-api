@@ -1,5 +1,5 @@
 import {AnyObject, property} from '@loopback/repository';
-import {SchemaObject} from '@loopback/rest';
+import {RequestBodyObject, SchemaObject} from '@loopback/rest';
 import {User} from '../models';
 
 export class UserWithRoles extends User {
@@ -12,14 +12,12 @@ export class UserWithRoles extends User {
 
 export type Credentials = {
   email: string;
-  phone: string;
   password: string;
 };
 
 export type otpCredentials = {
   email: string;
   phone: string;
-  countryCode: string;
   otp: string;
 };
 
@@ -53,8 +51,7 @@ export type PushPayload = {
 
 export const CredentialsSchema: SchemaObject = {
   type: 'object',
-  // required: ['email', 'password'],
-  required: ['password'],
+  required: ['email', 'password'],
   properties: {
     email: {
       type: 'string',
@@ -74,10 +71,26 @@ export const CredentialsSchema: SchemaObject = {
   },
 };
 
-export const CredentialsRequestBody = {
-  description: 'The input of login function',
+export const CredentialsRequestBody: RequestBodyObject = {
+  description: 'The input for login function',
+  required: true,
   content: {
-    'application/json': {schema: CredentialsSchema},
+    'application/json': {
+      schema: {
+        type: 'object',
+        required: ['email', 'password'],
+        properties: {
+          email: {
+            type: 'string',
+            format: 'email',
+          },
+          password: {
+            type: 'string',
+            minLength: 6,
+          },
+        },
+      },
+    },
   },
 };
 
@@ -109,13 +122,6 @@ export const otpCredentialsRequestBody = {
     'application/json': {schema: otpCredentialsSchema},
   },
 };
-
-export class NewUserRequest extends User {
-  @property({
-    type: 'string',
-  })
-  password: string;
-}
 
 export class NewUserResponse extends User {
   @property({

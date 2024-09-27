@@ -38,6 +38,14 @@ export class User extends Entity {
 
   @property({
     type: 'string',
+    jsonSchema: {
+      minLength: 6,
+    },
+  })
+  password?: string;
+
+  @property({
+    type: 'string',
   })
   gender?: string;
 

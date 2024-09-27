@@ -1,6 +1,10 @@
 import {AuthenticationComponent} from '@loopback/authentication';
+import {
+  JWTAuthenticationComponent,
+  JWTAuthenticationStrategy,
+} from '@loopback/authentication-jwt';
 import {BootMixin} from '@loopback/boot';
-import {ApplicationConfig} from '@loopback/core';
+import {ApplicationConfig, createBindingFromClass} from '@loopback/core';
 import {RepositoryMixin} from '@loopback/repository';
 import {RestApplication} from '@loopback/rest';
 import {
@@ -16,7 +20,7 @@ import {
   TokenServiceConstants,
   UserServiceBindings,
 } from './keys';
-import {MySequence} from './sequence';
+import {MyAuthenticationSequence} from './sequence';
 import {BcryptHasher} from './services/hash.password.bcryptjs';
 import {JWTService} from './services/jwt-service';
 import {MyUserService} from './services/user-service';
@@ -29,8 +33,11 @@ export class JaltaraApplication extends BootMixin(
   constructor(options: ApplicationConfig = {}) {
     super(options);
 
+    // authentication
+    this.add(createBindingFromClass(JWTAuthenticationStrategy));
+
     // Set up the custom sequence
-    this.sequence(MySequence);
+    this.sequence(MyAuthenticationSequence);
 
     // Set up default home page
     this.static('/', path.join(__dirname, '../public'));
@@ -51,6 +58,9 @@ export class JaltaraApplication extends BootMixin(
         nested: true,
       },
     };
+
+    // Mount jwt component
+    this.component(JWTAuthenticationComponent);
 
     // Mount authentication system
     this.component(AuthenticationComponent);
