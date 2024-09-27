@@ -39,7 +39,6 @@ export class MyUserService implements UserService<User, Credentials> {
   }
 
   async verifyCredentials(credentials: Credentials): Promise<User> {
-    // const invalidCredentialsError = 'Invalid email or password.';
     const invalidCredentialsError = 'Invalid Credentials.';
 
     if (!credentials.email) {
@@ -50,21 +49,9 @@ export class MyUserService implements UserService<User, Credentials> {
     const foundUser = await this.userRepository.findOne({
       where: {
         email: credentials.email,
-        phone: credentials.phone,
-        // countryCode: credentials.countryCode,
         status: 'active',
       },
-      include: [{relation: 'role'}],
     });
-    if (
-      foundUser &&
-      foundUser.role.slug != 'superadmin' &&
-      foundUser.currentTeamId == ''
-    ) {
-      throw new HttpErrors[422](
-        'You are not part of any team, Please contact system administrator',
-      );
-    }
 
     if (!foundUser) {
       throw new HttpErrors.Unauthorized(invalidCredentialsError);
@@ -223,7 +210,7 @@ export class MyUserService implements UserService<User, Credentials> {
   convertToUserProfile(user: User): UserProfile {
     const userProfile = {
       [securityId]: user.id ?? '',
-      name: user.fname + ' ' + user.lname,
+      name: user.name,
       id: user.id,
     };
 

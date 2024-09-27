@@ -23,11 +23,9 @@ import _ from 'lodash';
 import {PasswordHasherBindings, TokenServiceBindings} from '../keys';
 import {User} from '../models';
 import {UserRepository} from '../repositories';
-import * as common from '../services/common';
 import {PasswordHasher} from '../services/hash.password.bcryptjs';
 import {TokenService} from '../services/jwt-service';
 import {MyUserService} from '../services/user-service';
-import {validateCredentials} from '../services/validator';
 import {
   Credentials,
   CredentialsRequestBody,
@@ -63,37 +61,27 @@ export class UserController {
     })
     user: Omit<User, 'id'>,
   ): Promise<any> {
+    const hashedPassword = await this.passwordHasher.hashPassword(
+      user.password,
+    );
+
+    const emailExists = await this.userRepository.count({
+      email: user.email,
+    });
+    if (emailExists?.count) {
+      throw new HttpErrors.Conflict('Email already registered');
+    }
+
+    const phoneExists = await this.userRepository.count({
+      phone: user.phone,
+    });
+    if (phoneExists?.count) {
+      throw new HttpErrors.Conflict('Phone already registered');
+    }
+
     try {
-      if (!user.password) {
-        throw new HttpErrors.NotFound('Password key is missing');
-      }
-      user.password = user.password ?? common.generateString();
-
-      validateCredentials(_.pick(user, ['email', 'phone', 'password']));
-
-      const hashedPassword = await this.passwordHasher.hashPassword(
-        user.password,
-      );
-
-      const emailExists = await this.userRepository.count({
-        email: user.email,
-      });
-      if (emailExists?.count) {
-        throw new HttpErrors.Conflict('Email already registered');
-      }
-
       const savedUser = await this.userRepository.create(
-        _.omit(user, [
-          'password',
-          'dob',
-          'height',
-          'weight',
-          'position',
-          'jerseySize',
-          'jerseyNum',
-          'internationalJerseyNum',
-          'shoeSize',
-        ]),
+        _.omit(user, ['password']),
       );
 
       if (!savedUser) {
@@ -143,7 +131,7 @@ export class UserController {
   })
   async login(
     @requestBody(CredentialsRequestBody) credentials: Credentials,
-  ): Promise<{}> {
+  ): Promise<any> {
     const user = await this.userService.verifyCredentials(credentials);
     const userProfile = await this.userService.getUserProfile(user);
     const token = await this.jwtService.generateToken(userProfile);
@@ -152,6 +140,7 @@ export class UserController {
       message: 'Authentication successful',
       data: {
         id: user.id,
+        name: user.name,
         token: token,
       },
     };

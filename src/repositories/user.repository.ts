@@ -38,7 +38,6 @@ export class UserRepository extends DefaultCrudRepository<
   ): Promise<UserCredential | undefined> {
     try {
       return await this.userCredential(userId).get();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       if (err && err.code === 'ENTITY_NOT_FOUND') {
         return undefined;
