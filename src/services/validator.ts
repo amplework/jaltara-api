@@ -11,6 +11,14 @@ export function validateCredentials(credentials: Credentials) {
   }
 }
 
+export function validatePassword(password: String) {
+  if (password.length < 6) {
+    throw new HttpErrors.UnprocessableEntity(
+      'password must be minimum 6 characters',
+    );
+  }
+}
+
 export function ValidateTeam(teamId: String, userTeamId: String) {
   if (teamId != userTeamId) {
     throw new HttpErrors[422]('You are not part of the this team');

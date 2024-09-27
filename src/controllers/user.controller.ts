@@ -1,3 +1,5 @@
+import {authenticate} from '@loopback/authentication';
+import {OPERATION_SECURITY_SPEC} from '@loopback/authentication-jwt';
 import {inject, service} from '@loopback/core';
 import {
   Count,
@@ -19,6 +21,7 @@ import {
   requestBody,
   response,
 } from '@loopback/rest';
+import {SecurityBindings, UserProfile} from '@loopback/security';
 import _ from 'lodash';
 import {PasswordHasherBindings, TokenServiceBindings} from '../keys';
 import {User} from '../models';
@@ -26,20 +29,30 @@ import {UserRepository} from '../repositories';
 import {PasswordHasher} from '../services/hash.password.bcryptjs';
 import {TokenService} from '../services/jwt-service';
 import {MyUserService} from '../services/user-service';
+import {validatePassword} from '../services/validator';
 import {
+  ChangePassword,
   Credentials,
   CredentialsRequestBody,
   NewUserResponse,
+  PasswordChangeRequestBody,
+  UserProfileSchema,
 } from '../utils/type-schema';
 
 export class UserController {
   constructor(
-    @repository(UserRepository)
-    public userRepository: UserRepository,
-    @inject(PasswordHasherBindings.PASSWORD_HASHER)
-    public passwordHasher: PasswordHasher,
     @inject(TokenServiceBindings.TOKEN_SERVICE)
     public jwtService: TokenService,
+
+    @inject(SecurityBindings.USER, {optional: true})
+    public user: UserProfile,
+
+    @repository(UserRepository)
+    public userRepository: UserRepository,
+
+    @inject(PasswordHasherBindings.PASSWORD_HASHER)
+    public passwordHasher: PasswordHasher,
+
     @service(MyUserService) public userService: MyUserService,
   ) {}
 
@@ -160,6 +173,56 @@ export class UserController {
   })
   async find(@param.filter(User) filter?: Filter<User>): Promise<User[]> {
     return this.userRepository.find(filter);
+  }
+
+  @put('/user/change-password', {
+    security: OPERATION_SECURITY_SPEC,
+    responses: {
+      '200': {
+        description: 'The updated user profile',
+        content: {
+          'application/json': {
+            schema: UserProfileSchema,
+          },
+        },
+      },
+    },
+  })
+  @authenticate('jwt')
+  async changePassword(
+    @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
+    @requestBody(PasswordChangeRequestBody) data: ChangePassword,
+  ): Promise<any> {
+    const {oldPassword, password} = data;
+    const {id} = currentUserProfile;
+
+    const user = await this.userRepository.findById(id);
+    if (!user) {
+      throw new HttpErrors.NotFound('User account not found');
+    }
+    const passwordError = await this.userService.validatePassword(password);
+    if (passwordError) {
+      return {
+        success: false,
+        message: passwordError,
+      };
+    }
+
+    validatePassword(oldPassword);
+
+    const isSame = await this.userService.verifyPassword(id, oldPassword);
+    if (isSame) {
+      const passwordHash = await this.passwordHasher.hashPassword(password);
+      await this.userRepository
+        .userCredential(user.id)
+        .patch({password: passwordHash});
+      return {
+        statusCode: 200,
+        message: 'Password changed successfully',
+      };
+    } else {
+      throw new HttpErrors.Unauthorized('Incorrect User credentials');
+    }
   }
 
   @patch('/users')

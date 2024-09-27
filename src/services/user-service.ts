@@ -2,15 +2,15 @@ import {UserService} from '@loopback/authentication';
 import {inject} from '@loopback/context';
 import {repository} from '@loopback/repository';
 import {HttpErrors} from '@loopback/rest';
-import {UserProfile, securityId} from '@loopback/security';
+import {securityId, UserProfile} from '@loopback/security';
 import {PasswordHasherBindings} from '../keys';
 import {User} from '../models/user.model';
 import {} from '../repositories';
 import {UserRepository} from '../repositories/user.repository';
 import {
   Credentials,
-  SetPasswordRequest,
   otpCredentials,
+  SetPasswordRequest,
 } from '../utils/type-schema';
 import {PasswordHasher} from './hash.password.bcryptjs';
 
