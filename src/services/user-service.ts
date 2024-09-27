@@ -80,9 +80,7 @@ export class MyUserService implements UserService<User, Credentials> {
   async verifyOtpCredentials(credentials: otpCredentials): Promise<User> {
     const invalidCredentialsError = 'Invalid Credentials.';
 
-    if (
-      !(credentials.email || (credentials.phone && credentials.countryCode))
-    ) {
+    if (!(credentials.email || credentials.phone)) {
       throw new HttpErrors[422](
         'email or phone number with country code required',
       );
@@ -91,90 +89,12 @@ export class MyUserService implements UserService<User, Credentials> {
       where: {
         email: credentials.email,
         phone: credentials.phone,
-        countryCode: credentials.countryCode,
         status: 'active',
       },
-      include: [{relation: 'role'}],
     });
-    if (
-      foundUser &&
-      foundUser.role.slug != 'superadmin' &&
-      foundUser.currentTeamId == ''
-    ) {
-      throw new HttpErrors[422](
-        'You are not part of any team, Please contact system administrator',
-      );
-    }
-
     if (!foundUser) {
       throw new HttpErrors.Unauthorized(invalidCredentialsError);
     }
-    ///////////////////////////////////////////////////////////////////
-    // if (foundUser.status == 'active') {
-    //   const userCodeData = await this.userCodeRepository.findOne({
-    //     where: {userId: foundUser.id},
-    //   });
-
-    //   if (!userCodeData) {
-    //     throw new HttpErrors.Unauthorized('incorrect OTP');
-    //   }
-
-    //   if (credentials.otp !== '123456') {
-    //     throw new HttpErrors.Unauthorized('incorrect OTP');
-    //   }
-
-    //   await this.userCodeRepository.deleteById(userCodeData.id);
-
-    //   return foundUser;
-    // }
-    ////////////////////////////////////////////////////
-
-    // if (foundUser.excelId == '9999') {
-    //   const userCodeData = await this.userCodeRepository.findOne({
-    //     where: {userId: foundUser.id},
-    //   });
-
-    //   if (!userCodeData) {
-    //     throw new HttpErrors.Unauthorized('incorrect OTP');
-    //   }
-
-    //   if (credentials.otp !== '123456') {
-    //     throw new HttpErrors.Unauthorized('incorrect OTP');
-    //   }
-
-    //   await this.userCodeRepository.deleteById(userCodeData.id);
-
-    //   return foundUser;
-    // }
-
-    // const userCodeData = await this.userCodeRepository.findOne({
-    //   where: {userId: foundUser.id},
-    // });
-
-    // if (!userCodeData) {
-    //   throw new HttpErrors.Unauthorized('incorrect OTP');
-    // }
-
-    // this.otpExpiryCheck(userCodeData.codeExpiry);
-    // const currentDate = new Date();
-    // const storedDate: any = userCodeData.codeExpiry;
-    // const timeDifference = storedDate.getTime() - currentDate.getTime();
-    // const timeDifferenceInMinutes = timeDifference / (1000 * 60);
-    // if (timeDifferenceInMinutes > 5 || currentDate > storedDate) {
-    //   throw new HttpErrors.NotFound('otp has been expired');
-    // }
-
-    // const passwordMatched = await this.passwordHasher.comparePassword(
-    //   credentials.otp,
-    //   userCodeData.code,
-    // );
-
-    // if (!passwordMatched) {
-    //   throw new HttpErrors.Unauthorized('incorrect OTP');
-    // }
-
-    // await this.userCodeRepository.deleteById(userCodeData.id);
-
     return foundUser;
   }
 

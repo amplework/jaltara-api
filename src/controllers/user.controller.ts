@@ -21,7 +21,7 @@ import {
   requestBody,
   response,
 } from '@loopback/rest';
-import {SecurityBindings, UserProfile} from '@loopback/security';
+import {SecurityBindings, securityId, UserProfile} from '@loopback/security';
 import _ from 'lodash';
 import {PasswordHasherBindings, TokenServiceBindings} from '../keys';
 import {User} from '../models';
@@ -35,6 +35,8 @@ import {
   Credentials,
   CredentialsRequestBody,
   NewUserResponse,
+  otpCredentials,
+  otpCredentialsRequestBody,
   PasswordChangeRequestBody,
   UserProfileSchema,
 } from '../utils/type-schema';
@@ -146,6 +148,177 @@ export class UserController {
     @requestBody(CredentialsRequestBody) credentials: Credentials,
   ): Promise<any> {
     const user = await this.userService.verifyCredentials(credentials);
+    const userProfile = await this.userService.getUserProfile(user);
+    const token = await this.jwtService.generateToken(userProfile);
+    return {
+      statusCode: 200,
+      message: 'Authentication successful',
+      data: {
+        id: user.id,
+        name: user.name,
+        token: token,
+      },
+    };
+  }
+
+  @get('/user/me', {
+    responses: {
+      '200': {
+        description: 'The current user profile',
+        content: {
+          'application/json': {
+            schema: UserProfileSchema,
+          },
+        },
+      },
+    },
+  })
+  @authenticate('jwt')
+  async whoAmI(
+    @inject(SecurityBindings.USER)
+    currentUserProfile: UserProfile,
+  ): Promise<any> {
+    const userId = currentUserProfile[securityId];
+    const user = await this.userRepository.findById(userId);
+    return {
+      statusCode: 200,
+      message: 'User profile',
+      data: user,
+    };
+  }
+
+  @post('/sendOtp', {
+    responses: {
+      '200': {
+        description: 'otp Send response.',
+      },
+    },
+  })
+  async loginWithOTP(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(User, {partial: true}),
+        },
+      },
+    })
+    user: User,
+  ): Promise<any> {
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const hashedOtp = await this.passwordHasher.hashPassword(otp);
+    let where: any = {
+      status: 'active',
+    };
+
+    let requestType: string = '';
+    if (user.email) {
+      requestType = user.email;
+      where = {
+        ...where,
+        email: user.email,
+      };
+    } else if (user.phone) {
+      if (!user.countryCode) {
+        throw new HttpErrors.UnprocessableEntity('country code is required');
+      }
+      requestType = user.phone;
+      where = {
+        ...where,
+        countryCode: user.countryCode,
+        phone: user.phone,
+      };
+    }
+
+    const userdata = await this.userRepository.findOne({
+      where: where,
+    });
+    if (userdata && userdata.id) {
+      // const userCodeData = await this.userCodeRepository.findOne({
+      //   where: {userId: userdata.id},
+      // });
+
+      // const currentDate = new Date();
+      // const codeExpiry = new Date(currentDate.getTime() + 5 * 60000); // Add 5 minutes (5 * 60 * 1000 milliseconds)
+
+      // if (userCodeData && userCodeData.id) {
+      //   await this.userCodeRepository.updateById(userCodeData.id, {
+      //     code: hashedOtp,
+      //     codeExpiry: codeExpiry,
+      //   });
+      // } else {
+      //   await this.userCodeRepository.create({
+      //     userId: userdata.id,
+      //     codeExpiry: codeExpiry,
+      //     code: hashedOtp,
+      //   });
+      // }
+
+      if (user.email) {
+        const dataObj = {
+          otp: otp,
+        };
+        const mailOptions = {
+          from: 'no-reply@test.com',
+          to: user.email,
+          slug: 'otp-send',
+          mailContent: dataObj,
+        };
+
+        console.log('send to email otp service');
+        // return this.emailService
+        //   .sendMail(mailOptions)
+        //   .then(function (res: unknown) {
+        //     return {
+        //       statusCode: 200,
+        //       message: `Successfully sent otp to ${user.email}`,
+        //       role: userdata.role.slug,
+        //     };
+        //   })
+        //   .catch(function (err: unknown) {
+        //     throw new HttpErrors.UnprocessableEntity(
+        //       `Error in sending E-mail to ${user.email}`,
+        //     );
+        //   });
+      } else if (user.phone) {
+        const userPhone = `${user.countryCode}${user.phone}`;
+        // await this.taqnyatService.sendOTP(userPhone, otp);
+        console.log('send to phone otp service');
+      }
+      return {
+        statusCode: 200,
+        message: `OTP send successfully`,
+      };
+    } else {
+      return {
+        statusCode: 404,
+        message: `User not found for ${requestType}`,
+      };
+    }
+  }
+
+  @post('/otp/login', {
+    responses: {
+      '200': {
+        description: 'Token',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                token: {
+                  type: 'string',
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  async otpLogin(
+    @requestBody(otpCredentialsRequestBody) credentials: otpCredentials,
+  ): Promise<any> {
+    const user = await this.userService.verifyOtpCredentials(credentials);
     const userProfile = await this.userService.getUserProfile(user);
     const token = await this.jwtService.generateToken(userProfile);
     return {

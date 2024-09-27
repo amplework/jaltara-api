@@ -18,7 +18,6 @@ export type Credentials = {
 export type otpCredentials = {
   email: string;
   phone: string;
-  countryCode: string;
   otp: string;
 };
 
