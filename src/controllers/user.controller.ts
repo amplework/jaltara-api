@@ -25,7 +25,7 @@ import {SecurityBindings, securityId, UserProfile} from '@loopback/security';
 import _ from 'lodash';
 import {PasswordHasherBindings, TokenServiceBindings} from '../keys';
 import {User} from '../models';
-import {UserRepository} from '../repositories';
+import {UserCodeRepository, UserRepository} from '../repositories';
 import {PasswordHasher} from '../services/hash.password.bcryptjs';
 import {TokenService} from '../services/jwt-service';
 import {MyUserService} from '../services/user-service';
@@ -51,6 +51,9 @@ export class UserController {
 
     @repository(UserRepository)
     public userRepository: UserRepository,
+
+    @repository(UserCodeRepository)
+    public userCodeRepository: UserCodeRepository,
 
     @inject(PasswordHasherBindings.PASSWORD_HASHER)
     public passwordHasher: PasswordHasher,
@@ -190,7 +193,7 @@ export class UserController {
   @post('/sendOtp', {
     responses: {
       '200': {
-        description: 'otp Send response.',
+        description: 'OTP send response.',
       },
     },
   })
@@ -204,95 +207,85 @@ export class UserController {
     })
     user: User,
   ): Promise<any> {
+    if (!user) {
+      throw new HttpErrors.UnprocessableEntity(
+        'To send OTP, Email or Phone is required',
+      );
+    }
+
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    console.log('Generated OTP:', otp);
     const hashedOtp = await this.passwordHasher.hashPassword(otp);
-    let where: any = {
+
+    const where = {
       status: 'active',
+      ...(user.email ? {email: user.email} : {}),
+      ...(user.phone ? {phone: user.phone} : {}),
     };
 
-    let requestType: string = '';
-    if (user.email) {
-      requestType = user.email;
-      where = {
-        ...where,
-        email: user.email,
-      };
-    } else if (user.phone) {
-      if (!user.countryCode) {
-        throw new HttpErrors.UnprocessableEntity('country code is required');
-      }
-      requestType = user.phone;
-      where = {
-        ...where,
-        countryCode: user.countryCode,
-        phone: user.phone,
+    const userdata = await this.userRepository.findOne({where});
+    if (!userdata || !userdata.id) {
+      return {
+        statusCode: 404,
+        message: `User not found for ${user.email || user.phone}`,
       };
     }
 
-    const userdata = await this.userRepository.findOne({
-      where: where,
-    });
-    if (userdata && userdata.id) {
-      // const userCodeData = await this.userCodeRepository.findOne({
-      //   where: {userId: userdata.id},
+    await this.updateOrCreateUserCode(userdata.id, hashedOtp);
+
+    if (user.email) {
+      console.log('Sending OTP to email service');
+      const dataObj = {otp};
+      const mailOptions = {
+        from: 'no-reply@test.com',
+        to: user.email,
+        slug: 'otp-send',
+        mailContent: dataObj,
+      };
+      // Uncomment when email service is available
+      // return this.emailService.sendMail(mailOptions).then((res) => {
+      //   return {
+      //     statusCode: 200,
+      //     message: `Successfully sent OTP to ${user.email}`,
+      //     role: userdata.role.slug,
+      //   };
+      // }).catch((err) => {
+      //   throw new HttpErrors.UnprocessableEntity(`Error in sending email to ${user.email}`);
       // });
+    } else if (user.phone) {
+      const userPhone = `${user.countryCode}${user.phone}`;
+      console.log('Sending OTP to phone service');
+      // Uncomment when SMS service is available
+      // await this.taqnyatService.sendOTP(userPhone, otp);
+    }
 
-      // const currentDate = new Date();
-      // const codeExpiry = new Date(currentDate.getTime() + 5 * 60000); // Add 5 minutes (5 * 60 * 1000 milliseconds)
+    return {
+      statusCode: 200,
+      message: `OTP sent successfully`,
+    };
+  }
 
-      // if (userCodeData && userCodeData.id) {
-      //   await this.userCodeRepository.updateById(userCodeData.id, {
-      //     code: hashedOtp,
-      //     codeExpiry: codeExpiry,
-      //   });
-      // } else {
-      //   await this.userCodeRepository.create({
-      //     userId: userdata.id,
-      //     codeExpiry: codeExpiry,
-      //     code: hashedOtp,
-      //   });
-      // }
+  async updateOrCreateUserCode(
+    userId: string,
+    hashedOtp: string,
+  ): Promise<void> {
+    const userCodeData = await this.userCodeRepository.findOne({
+      where: {userId},
+    });
+    const expiryMinutes = Number(process.env.CODE_EXPIRY_MINUTES) || 5; // default to 5 minutes if not set
+    const codeExpiry = new Date(new Date().getTime() + expiryMinutes * 60000);
 
-      if (user.email) {
-        const dataObj = {
-          otp: otp,
-        };
-        const mailOptions = {
-          from: 'no-reply@test.com',
-          to: user.email,
-          slug: 'otp-send',
-          mailContent: dataObj,
-        };
-
-        console.log('send to email otp service');
-        // return this.emailService
-        //   .sendMail(mailOptions)
-        //   .then(function (res: unknown) {
-        //     return {
-        //       statusCode: 200,
-        //       message: `Successfully sent otp to ${user.email}`,
-        //       role: userdata.role.slug,
-        //     };
-        //   })
-        //   .catch(function (err: unknown) {
-        //     throw new HttpErrors.UnprocessableEntity(
-        //       `Error in sending E-mail to ${user.email}`,
-        //     );
-        //   });
-      } else if (user.phone) {
-        const userPhone = `${user.countryCode}${user.phone}`;
-        // await this.taqnyatService.sendOTP(userPhone, otp);
-        console.log('send to phone otp service');
-      }
-      return {
-        statusCode: 200,
-        message: `OTP send successfully`,
-      };
+    if (userCodeData && userCodeData.id) {
+      await this.userCodeRepository.updateById(userCodeData.id, {
+        code: hashedOtp,
+        codeExpiry,
+      });
     } else {
-      return {
-        statusCode: 404,
-        message: `User not found for ${requestType}`,
-      };
+      await this.userCodeRepository.create({
+        userId,
+        codeExpiry,
+        code: hashedOtp,
+      });
     }
   }
 
