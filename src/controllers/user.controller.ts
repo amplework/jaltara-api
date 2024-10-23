@@ -1,14 +1,7 @@
 import {authenticate} from '@loopback/authentication';
 import {OPERATION_SECURITY_SPEC} from '@loopback/authentication-jwt';
 import {inject, service} from '@loopback/core';
-import {
-  Count,
-  CountSchema,
-  Filter,
-  FilterExcludingWhere,
-  repository,
-  Where,
-} from '@loopback/repository';
+import {Filter, FilterExcludingWhere, repository} from '@loopback/repository';
 import {
   del,
   get,
@@ -391,25 +384,6 @@ export class UserController {
     }
   }
 
-  @patch('/users')
-  @response(200, {
-    description: 'User PATCH success count',
-    content: {'application/json': {schema: CountSchema}},
-  })
-  async updateAll(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(User, {partial: true}),
-        },
-      },
-    })
-    user: User,
-    @param.where(User) where?: Where<User>,
-  ): Promise<Count> {
-    return this.userRepository.updateAll(user, where);
-  }
-
   @get('/users/{id}')
   @response(200, {
     description: 'User model instance',
@@ -430,6 +404,7 @@ export class UserController {
   @response(204, {
     description: 'User PATCH success',
   })
+  @authenticate('jwt')
   async updateById(
     @param.path.string('id') id: string,
     @requestBody({
@@ -440,7 +415,14 @@ export class UserController {
       },
     })
     user: User,
-  ): Promise<void> {
+    @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
+  ): Promise<any> {
+    const {user_id} = currentUserProfile;
+
+    const userExists = await this.userRepository.findById(user_id);
+    if (!userExists) {
+      throw new HttpErrors.NotFound('User account not found');
+    }
     await this.userRepository.updateById(id, user);
   }
 
