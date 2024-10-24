@@ -1,4 +1,5 @@
 import {
+  AnyObject,
   Count,
   CountSchema,
   Filter,
@@ -7,13 +8,14 @@ import {
   Where,
 } from '@loopback/repository';
 import {
-  post,
-  param,
+  del,
   get,
   getModelSchemaRef,
+  HttpErrors,
+  param,
   patch,
+  post,
   put,
-  del,
   requestBody,
   response,
 } from '@loopback/rest';
@@ -23,7 +25,7 @@ import {FarmerRepository} from '../repositories';
 export class FarmerController {
   constructor(
     @repository(FarmerRepository)
-    public farmerRepository : FarmerRepository,
+    public farmerRepository: FarmerRepository,
   ) {}
 
   @post('/farmers')
@@ -43,19 +45,22 @@ export class FarmerController {
       },
     })
     farmer: Omit<Farmer, 'id'>,
-  ): Promise<Farmer> {
-    return this.farmerRepository.create(farmer);
-  }
-
-  @get('/farmers/count')
-  @response(200, {
-    description: 'Farmer model count',
-    content: {'application/json': {schema: CountSchema}},
-  })
-  async count(
-    @param.where(Farmer) where?: Where<Farmer>,
-  ): Promise<Count> {
-    return this.farmerRepository.count(where);
+  ): Promise<AnyObject> {
+    const phoneExists = await this.farmerRepository.findOne({
+      where: {
+        phone: farmer.phone,
+      },
+    });
+    if (phoneExists) {
+      const errorMessage = `Phone number ${phoneExists.phone} is already registered`;
+      throw new HttpErrors.Conflict(errorMessage);
+    }
+    const data = await this.farmerRepository.create(farmer);
+    return {
+      statusCode: 201,
+      message: 'Farmer added successfully',
+      data: data,
+    };
   }
 
   @get('/farmers')
@@ -70,9 +75,7 @@ export class FarmerController {
       },
     },
   })
-  async find(
-    @param.filter(Farmer) filter?: Filter<Farmer>,
-  ): Promise<Farmer[]> {
+  async find(@param.filter(Farmer) filter?: Filter<Farmer>): Promise<Farmer[]> {
     return this.farmerRepository.find(filter);
   }
 
@@ -106,7 +109,8 @@ export class FarmerController {
   })
   async findById(
     @param.path.string('id') id: string,
-    @param.filter(Farmer, {exclude: 'where'}) filter?: FilterExcludingWhere<Farmer>
+    @param.filter(Farmer, {exclude: 'where'})
+    filter?: FilterExcludingWhere<Farmer>,
   ): Promise<Farmer> {
     return this.farmerRepository.findById(id, filter);
   }

@@ -31,8 +31,7 @@ export class User extends Entity {
 
   @property({
     type: 'string',
-    required: true,
-    index: {unique: true},
+    required: false,
   })
   email?: string;
 

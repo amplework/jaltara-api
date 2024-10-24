@@ -25,8 +25,6 @@ import {MyUserService} from '../services/user-service';
 import {validatePassword} from '../services/validator';
 import {
   ChangePassword,
-  Credentials,
-  CredentialsRequestBody,
   NewUserResponse,
   otpCredentials,
   otpCredentialsRequestBody,
@@ -59,7 +57,7 @@ export class UserController {
     description: 'User model instance',
     content: {'application/json': {schema: getModelSchemaRef(User)}},
   })
-  async create(
+  async checkUser(
     @requestBody({
       content: {
         'application/json': {
@@ -72,88 +70,53 @@ export class UserController {
     })
     user: Omit<User, 'id'>,
   ): Promise<any> {
-    const hashedPassword = await this.passwordHasher.hashPassword(
-      user.password,
-    );
-
-    const emailExists = await this.userRepository.count({
-      email: user.email,
+    const phoneExists = await this.userRepository.findOne({
+      where: {
+        phone: user.phone,
+      },
     });
-    if (emailExists?.count) {
-      throw new HttpErrors.Conflict('Email already registered');
-    }
+    if (phoneExists) {
+      this.userRepository.userCredential(phoneExists.id);
 
-    const phoneExists = await this.userRepository.count({
-      phone: user.phone,
-    });
-    if (phoneExists?.count) {
-      throw new HttpErrors.Conflict('Phone already registered');
-    }
-
-    try {
-      const savedUser = await this.userRepository.create(
-        _.omit(user, ['password']),
-      );
-
-      if (!savedUser) {
-        throw new HttpErrors.BadRequest('Error in creating new User!');
-      }
-
-      await this.userRepository
-        .userCredential(savedUser.id)
-        .create({password: hashedPassword});
-
-      const userProfile = await this.userService.getUserProfile(savedUser);
+      const userProfile = await this.userService.getUserProfile(phoneExists);
       const token = await this.jwtService.generateToken(userProfile);
 
-      const result: NewUserResponse = _.extend({}, savedUser, {
+      const result: NewUserResponse = _.extend({}, phoneExists, {
         token,
       });
 
       return {
         statusCode: 200,
-        message: 'User added successfully.',
-        data: result,
-      };
-    } catch (error) {
-      console.error('Error creating user:', error);
-      throw error;
-    }
-  }
-
-  @post('/auth/login', {
-    responses: {
-      '200': {
-        description: 'Token',
-        content: {
-          'application/json': {
-            schema: {
-              type: 'object',
-              properties: {
-                token: {
-                  type: 'string',
-                },
-              },
-            },
-          },
+        message: 'Authentication successful',
+        data: {
+          id: result.id,
+          name: result.name,
+          token: token,
         },
-      },
-    },
-  })
-  async login(
-    @requestBody(CredentialsRequestBody) credentials: Credentials,
-  ): Promise<any> {
-    const user = await this.userService.verifyCredentials(credentials);
-    const userProfile = await this.userService.getUserProfile(user);
+      };
+    }
+
+    const savedUser = await this.userRepository.create(
+      _.omit(user, ['password']),
+    );
+
+    if (!savedUser) {
+      throw new HttpErrors.BadRequest('Error in creating new User!');
+    }
+
+    this.userRepository.userCredential(savedUser.id);
+
+    const userProfile = await this.userService.getUserProfile(savedUser);
     const token = await this.jwtService.generateToken(userProfile);
+
+    const result: NewUserResponse = _.extend({}, savedUser, {
+      token,
+    });
+
     return {
       statusCode: 200,
-      message: 'Authentication successful',
-      data: {
-        id: user.id,
-        name: user.name,
-        token: token,
-      },
+      message: 'User added successfully.',
+      data: result,
     };
   }
 

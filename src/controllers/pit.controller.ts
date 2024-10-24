@@ -1,4 +1,5 @@
 import {
+  AnyObject,
   Count,
   CountSchema,
   Filter,
@@ -7,13 +8,13 @@ import {
   Where,
 } from '@loopback/repository';
 import {
-  post,
-  param,
+  del,
   get,
   getModelSchemaRef,
+  param,
   patch,
+  post,
   put,
-  del,
   requestBody,
   response,
 } from '@loopback/rest';
@@ -23,7 +24,7 @@ import {PitRepository} from '../repositories';
 export class PitController {
   constructor(
     @repository(PitRepository)
-    public pitRepository : PitRepository,
+    public pitRepository: PitRepository,
   ) {}
 
   @post('/pits')
@@ -43,19 +44,13 @@ export class PitController {
       },
     })
     pit: Omit<Pit, 'id'>,
-  ): Promise<Pit> {
-    return this.pitRepository.create(pit);
-  }
-
-  @get('/pits/count')
-  @response(200, {
-    description: 'Pit model count',
-    content: {'application/json': {schema: CountSchema}},
-  })
-  async count(
-    @param.where(Pit) where?: Where<Pit>,
-  ): Promise<Count> {
-    return this.pitRepository.count(where);
+  ): Promise<AnyObject> {
+    const data = await this.pitRepository.create(pit);
+    return {
+      statusCode: 201,
+      message: 'Pit added successfully',
+      data: data,
+    };
   }
 
   @get('/pits')
@@ -70,9 +65,7 @@ export class PitController {
       },
     },
   })
-  async find(
-    @param.filter(Pit) filter?: Filter<Pit>,
-  ): Promise<Pit[]> {
+  async find(@param.filter(Pit) filter?: Filter<Pit>): Promise<Pit[]> {
     return this.pitRepository.find(filter);
   }
 
@@ -106,7 +99,7 @@ export class PitController {
   })
   async findById(
     @param.path.string('id') id: string,
-    @param.filter(Pit, {exclude: 'where'}) filter?: FilterExcludingWhere<Pit>
+    @param.filter(Pit, {exclude: 'where'}) filter?: FilterExcludingWhere<Pit>,
   ): Promise<Pit> {
     return this.pitRepository.findById(id, filter);
   }
