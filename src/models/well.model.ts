@@ -1,4 +1,5 @@
-import {Entity, model, property} from '@loopback/repository';
+import {Entity, hasMany, model, property} from '@loopback/repository';
+import {Log} from './log.model';
 
 @model({settings: {strict: false}})
 export class Well extends Entity {
@@ -37,6 +38,8 @@ export class Well extends Entity {
   })
   description?: string;
 
+  @hasMany(() => Log)
+  logs: Log[];
   // Define well-known properties here
 
   // Indexer property to allow additional data
