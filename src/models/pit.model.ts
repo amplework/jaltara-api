@@ -1,5 +1,6 @@
-import {Entity, model, property, belongsTo} from '@loopback/repository';
+import {Entity, model, property, belongsTo, hasMany} from '@loopback/repository';
 import {Farmer} from './farmer.model';
+import {Stage} from './stage.model';
 
 @model({settings: {strict: false}})
 export class Pit extends Entity {
@@ -41,6 +42,9 @@ export class Pit extends Entity {
 
   @belongsTo(() => Farmer)
   farmerId: string;
+
+  @hasMany(() => Stage)
+  stages: Stage[];
   // Define well-known properties here
 
   // Indexer property to allow additional data
