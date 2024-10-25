@@ -1,4 +1,5 @@
 import {
+  AnyObject,
   Count,
   CountSchema,
   Filter,
@@ -7,13 +8,13 @@ import {
   Where,
 } from '@loopback/repository';
 import {
-  post,
-  param,
+  del,
   get,
   getModelSchemaRef,
+  param,
   patch,
+  post,
   put,
-  del,
   requestBody,
   response,
 } from '@loopback/rest';
@@ -23,7 +24,7 @@ import {LogRepository} from '../repositories';
 export class LogController {
   constructor(
     @repository(LogRepository)
-    public logRepository : LogRepository,
+    public logRepository: LogRepository,
   ) {}
 
   @post('/logs')
@@ -43,19 +44,13 @@ export class LogController {
       },
     })
     log: Omit<Log, 'id'>,
-  ): Promise<Log> {
-    return this.logRepository.create(log);
-  }
-
-  @get('/logs/count')
-  @response(200, {
-    description: 'Log model count',
-    content: {'application/json': {schema: CountSchema}},
-  })
-  async count(
-    @param.where(Log) where?: Where<Log>,
-  ): Promise<Count> {
-    return this.logRepository.count(where);
+  ): Promise<AnyObject> {
+    const data = await this.logRepository.create(log);
+    return {
+      statusCode: 201,
+      message: 'Log added successfully',
+      data: data,
+    };
   }
 
   @get('/logs')
@@ -70,10 +65,13 @@ export class LogController {
       },
     },
   })
-  async find(
-    @param.filter(Log) filter?: Filter<Log>,
-  ): Promise<Log[]> {
-    return this.logRepository.find(filter);
+  async find(@param.filter(Log) filter?: Filter<Log>): Promise<any> {
+    const data = await this.logRepository.find(filter);
+    return {
+      statusCode: 200,
+      message: 'Log List',
+      data: data,
+    };
   }
 
   @patch('/logs')
@@ -106,9 +104,14 @@ export class LogController {
   })
   async findById(
     @param.path.string('id') id: string,
-    @param.filter(Log, {exclude: 'where'}) filter?: FilterExcludingWhere<Log>
-  ): Promise<Log> {
-    return this.logRepository.findById(id, filter);
+    @param.filter(Log, {exclude: 'where'}) filter?: FilterExcludingWhere<Log>,
+  ): Promise<AnyObject> {
+    const data = await this.logRepository.findById(id, filter);
+    return {
+      statusCode: 200,
+      message: "Log's details",
+      data: data,
+    };
   }
 
   @patch('/logs/{id}')
