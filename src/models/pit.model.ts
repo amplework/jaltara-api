@@ -1,4 +1,5 @@
-import {Entity, model, property} from '@loopback/repository';
+import {Entity, model, property, belongsTo} from '@loopback/repository';
+import {Farmer} from './farmer.model';
 
 @model({settings: {strict: false}})
 export class Pit extends Entity {
@@ -38,6 +39,8 @@ export class Pit extends Entity {
   })
   stage: string;
 
+  @belongsTo(() => Farmer)
+  farmerId: string;
   // Define well-known properties here
 
   // Indexer property to allow additional data
