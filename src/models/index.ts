@@ -7,3 +7,4 @@ export * from './pit.model';
 export * from './well.model';
 export * from './stage.model';
 export * from './equipment.model';
+export * from './log.model';

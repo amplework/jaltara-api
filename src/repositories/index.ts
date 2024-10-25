@@ -6,3 +6,4 @@ export * from './pit.repository';
 export * from './well.repository';
 export * from './stage.repository';
 export * from './equipment.repository';
+export * from './log.repository';

@@ -5,3 +5,4 @@ export * from './pit.controller';
 export * from './stage.controller';
 export * from './user.controller';
 export * from './well.controller';
+export * from './log.controller';
