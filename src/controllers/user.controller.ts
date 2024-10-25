@@ -1,6 +1,11 @@
 import {authenticate} from '@loopback/authentication';
 import {inject, service} from '@loopback/core';
-import {Filter, FilterExcludingWhere, repository} from '@loopback/repository';
+import {
+  AnyObject,
+  Filter,
+  FilterExcludingWhere,
+  repository,
+} from '@loopback/repository';
 import {
   del,
   get,
@@ -149,8 +154,13 @@ export class UserController {
       },
     },
   })
-  async find(@param.filter(User) filter?: Filter<User>): Promise<User[]> {
-    return this.userRepository.find(filter);
+  async find(@param.filter(User) filter?: Filter<User>): Promise<any> {
+    const data = await this.userRepository.find(filter);
+    return {
+      statusCode: 200,
+      message: 'User details',
+      data: data,
+    };
   }
 
   @get('/users/{id}')
@@ -165,8 +175,13 @@ export class UserController {
   async findById(
     @param.path.string('id') id: string,
     @param.filter(User, {exclude: 'where'}) filter?: FilterExcludingWhere<User>,
-  ): Promise<User> {
-    return this.userRepository.findById(id, filter);
+  ): Promise<AnyObject> {
+    const data = await this.userRepository.findById(id, filter);
+    return {
+      statusCode: 200,
+      message: 'User details',
+      data: data,
+    };
   }
 
   @patch('/users/{id}')

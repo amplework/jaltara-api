@@ -75,8 +75,13 @@ export class FarmerController {
       },
     },
   })
-  async find(@param.filter(Farmer) filter?: Filter<Farmer>): Promise<Farmer[]> {
-    return this.farmerRepository.find(filter);
+  async find(@param.filter(Farmer) filter?: Filter<Farmer>): Promise<any> {
+    const data = await this.farmerRepository.find(filter);
+    return {
+      statusCode: 200,
+      message: "Farmer's list",
+      data: data,
+    };
   }
 
   @patch('/farmers')
@@ -111,8 +116,13 @@ export class FarmerController {
     @param.path.string('id') id: string,
     @param.filter(Farmer, {exclude: 'where'})
     filter?: FilterExcludingWhere<Farmer>,
-  ): Promise<Farmer> {
-    return this.farmerRepository.findById(id, filter);
+  ): Promise<AnyObject> {
+    const data = await this.farmerRepository.findById(id, filter);
+    return {
+      statusCode: 200,
+      message: 'Farmer details',
+      data: data,
+    };
   }
 
   @patch('/farmers/{id}')

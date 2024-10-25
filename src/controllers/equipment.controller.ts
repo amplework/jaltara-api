@@ -1,4 +1,5 @@
 import {
+  AnyObject,
   Count,
   CountSchema,
   Filter,
@@ -7,13 +8,13 @@ import {
   Where,
 } from '@loopback/repository';
 import {
-  post,
-  param,
+  del,
   get,
   getModelSchemaRef,
+  param,
   patch,
+  post,
   put,
-  del,
   requestBody,
   response,
 } from '@loopback/rest';
@@ -23,7 +24,7 @@ import {EquipmentRepository} from '../repositories';
 export class EquipmentController {
   constructor(
     @repository(EquipmentRepository)
-    public equipmentRepository : EquipmentRepository,
+    public equipmentRepository: EquipmentRepository,
   ) {}
 
   @post('/equipment')
@@ -43,19 +44,13 @@ export class EquipmentController {
       },
     })
     equipment: Omit<Equipment, 'id'>,
-  ): Promise<Equipment> {
-    return this.equipmentRepository.create(equipment);
-  }
-
-  @get('/equipment/count')
-  @response(200, {
-    description: 'Equipment model count',
-    content: {'application/json': {schema: CountSchema}},
-  })
-  async count(
-    @param.where(Equipment) where?: Where<Equipment>,
-  ): Promise<Count> {
-    return this.equipmentRepository.count(where);
+  ): Promise<AnyObject> {
+    const data = await this.equipmentRepository.create(equipment);
+    return {
+      statusCode: 201,
+      message: 'Equipment added successfully',
+      data: data,
+    };
   }
 
   @get('/equipment')
@@ -72,8 +67,13 @@ export class EquipmentController {
   })
   async find(
     @param.filter(Equipment) filter?: Filter<Equipment>,
-  ): Promise<Equipment[]> {
-    return this.equipmentRepository.find(filter);
+  ): Promise<any> {
+    const data = await this.equipmentRepository.find(filter);
+    return {
+      statusCode: 200,
+      message: "Equipment's List",
+      data: data,
+    };
   }
 
   @patch('/equipment')
@@ -106,9 +106,15 @@ export class EquipmentController {
   })
   async findById(
     @param.path.string('id') id: string,
-    @param.filter(Equipment, {exclude: 'where'}) filter?: FilterExcludingWhere<Equipment>
-  ): Promise<Equipment> {
-    return this.equipmentRepository.findById(id, filter);
+    @param.filter(Equipment, {exclude: 'where'})
+    filter?: FilterExcludingWhere<Equipment>,
+  ): Promise<AnyObject> {
+    const data = await this.equipmentRepository.findById(id, filter);
+    return {
+      statusCode: 200,
+      message: "Equipment's details",
+      data: data,
+    };
   }
 
   @patch('/equipment/{id}')

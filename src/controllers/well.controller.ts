@@ -1,4 +1,5 @@
 import {
+  AnyObject,
   Count,
   CountSchema,
   Filter,
@@ -7,13 +8,13 @@ import {
   Where,
 } from '@loopback/repository';
 import {
-  post,
-  param,
+  del,
   get,
   getModelSchemaRef,
+  param,
   patch,
+  post,
   put,
-  del,
   requestBody,
   response,
 } from '@loopback/rest';
@@ -23,7 +24,7 @@ import {WellRepository} from '../repositories';
 export class WellController {
   constructor(
     @repository(WellRepository)
-    public wellRepository : WellRepository,
+    public wellRepository: WellRepository,
   ) {}
 
   @post('/wells')
@@ -43,19 +44,13 @@ export class WellController {
       },
     })
     well: Omit<Well, 'id'>,
-  ): Promise<Well> {
-    return this.wellRepository.create(well);
-  }
-
-  @get('/wells/count')
-  @response(200, {
-    description: 'Well model count',
-    content: {'application/json': {schema: CountSchema}},
-  })
-  async count(
-    @param.where(Well) where?: Where<Well>,
-  ): Promise<Count> {
-    return this.wellRepository.count(where);
+  ): Promise<AnyObject> {
+    const data = await this.wellRepository.create(well);
+    return {
+      statusCode: 201,
+      message: 'Well added successfully',
+      data: data,
+    };
   }
 
   @get('/wells')
@@ -70,10 +65,13 @@ export class WellController {
       },
     },
   })
-  async find(
-    @param.filter(Well) filter?: Filter<Well>,
-  ): Promise<Well[]> {
-    return this.wellRepository.find(filter);
+  async find(@param.filter(Well) filter?: Filter<Well>): Promise<any> {
+    const data = await this.wellRepository.find(filter);
+    return {
+      statusCode: 200,
+      message: "Well's List",
+      data: data,
+    };
   }
 
   @patch('/wells')
@@ -106,9 +104,14 @@ export class WellController {
   })
   async findById(
     @param.path.string('id') id: string,
-    @param.filter(Well, {exclude: 'where'}) filter?: FilterExcludingWhere<Well>
-  ): Promise<Well> {
-    return this.wellRepository.findById(id, filter);
+    @param.filter(Well, {exclude: 'where'}) filter?: FilterExcludingWhere<Well>,
+  ): Promise<AnyObject> {
+    const data = await this.wellRepository.findById(id, filter);
+    return {
+      statusCode: 200,
+      message: "Well's details",
+      data: data,
+    };
   }
 
   @patch('/wells/{id}')

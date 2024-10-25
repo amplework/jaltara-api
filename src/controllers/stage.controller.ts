@@ -1,4 +1,5 @@
 import {
+  AnyObject,
   Count,
   CountSchema,
   Filter,
@@ -7,13 +8,13 @@ import {
   Where,
 } from '@loopback/repository';
 import {
-  post,
-  param,
+  del,
   get,
   getModelSchemaRef,
+  param,
   patch,
+  post,
   put,
-  del,
   requestBody,
   response,
 } from '@loopback/rest';
@@ -23,7 +24,7 @@ import {StageRepository} from '../repositories';
 export class StageController {
   constructor(
     @repository(StageRepository)
-    public stageRepository : StageRepository,
+    public stageRepository: StageRepository,
   ) {}
 
   @post('/stages')
@@ -43,19 +44,13 @@ export class StageController {
       },
     })
     stage: Omit<Stage, 'id'>,
-  ): Promise<Stage> {
-    return this.stageRepository.create(stage);
-  }
-
-  @get('/stages/count')
-  @response(200, {
-    description: 'Stage model count',
-    content: {'application/json': {schema: CountSchema}},
-  })
-  async count(
-    @param.where(Stage) where?: Where<Stage>,
-  ): Promise<Count> {
-    return this.stageRepository.count(where);
+  ): Promise<AnyObject> {
+    const data = await this.stageRepository.create(stage);
+    return {
+      statusCode: 201,
+      message: 'Stage added successfully',
+      data: data,
+    };
   }
 
   @get('/stages')
@@ -70,10 +65,13 @@ export class StageController {
       },
     },
   })
-  async find(
-    @param.filter(Stage) filter?: Filter<Stage>,
-  ): Promise<Stage[]> {
-    return this.stageRepository.find(filter);
+  async find(@param.filter(Stage) filter?: Filter<Stage>): Promise<any> {
+    const data = await this.stageRepository.find(filter);
+    return {
+      statusCode: 200,
+      message: 'stage list',
+      data: data,
+    };
   }
 
   @patch('/stages')
@@ -106,9 +104,15 @@ export class StageController {
   })
   async findById(
     @param.path.string('id') id: string,
-    @param.filter(Stage, {exclude: 'where'}) filter?: FilterExcludingWhere<Stage>
-  ): Promise<Stage> {
-    return this.stageRepository.findById(id, filter);
+    @param.filter(Stage, {exclude: 'where'})
+    filter?: FilterExcludingWhere<Stage>,
+  ): Promise<AnyObject> {
+    const data = await this.stageRepository.findById(id, filter);
+    return {
+      statusCode: 200,
+      message: "stage's details",
+      data: data,
+    };
   }
 
   @patch('/stages/{id}')

@@ -65,8 +65,13 @@ export class PitController {
       },
     },
   })
-  async find(@param.filter(Pit) filter?: Filter<Pit>): Promise<Pit[]> {
-    return this.pitRepository.find(filter);
+  async find(@param.filter(Pit) filter?: Filter<Pit>): Promise<any> {
+    const data = await this.pitRepository.find(filter);
+    return {
+      statusCode: 200,
+      message: 'Pits List',
+      data: data,
+    };
   }
 
   @patch('/pits')
@@ -100,8 +105,13 @@ export class PitController {
   async findById(
     @param.path.string('id') id: string,
     @param.filter(Pit, {exclude: 'where'}) filter?: FilterExcludingWhere<Pit>,
-  ): Promise<Pit> {
-    return this.pitRepository.findById(id, filter);
+  ): Promise<AnyObject> {
+    const data = await this.pitRepository.findById(id, filter);
+    return {
+      statusCode: 200,
+      message: "Pit's details",
+      data: data,
+    };
   }
 
   @patch('/pits/{id}')
