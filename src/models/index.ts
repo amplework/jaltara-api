@@ -4,3 +4,6 @@ export * from './village.model';
 export * from './user-code.model';
 export * from './farmer.model';
 export * from './pit.model';
+export * from './well.model';
+export * from './stage.model';
+export * from './equipment.model';
