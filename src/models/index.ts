@@ -8,3 +8,4 @@ export * from './well.model';
 export * from './stage.model';
 export * from './equipment.model';
 export * from './log.model';
+export * from './crop.model';

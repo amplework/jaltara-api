@@ -7,3 +7,4 @@ export * from './well.repository';
 export * from './stage.repository';
 export * from './equipment.repository';
 export * from './log.repository';
+export * from './crop.repository';
