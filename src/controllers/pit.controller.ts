@@ -1,11 +1,7 @@
 import {
   AnyObject,
-  Count,
-  CountSchema,
-  Filter,
   FilterExcludingWhere,
   repository,
-  Where,
 } from '@loopback/repository';
 import {
   del,
@@ -77,32 +73,15 @@ export class PitController {
       },
     },
   })
-  async find(@param.filter(Pit) filter?: Filter<Pit>): Promise<any> {
-    const data = await this.pitRepository.find(filter);
+  async find(): Promise<any> {
+    const data = await this.pitRepository.find({
+      include: [{relation: 'stages'}],
+    });
     return {
       statusCode: 200,
       message: 'Pits List',
       data: data,
     };
-  }
-
-  @patch('/pits')
-  @response(200, {
-    description: 'Pit PATCH success count',
-    content: {'application/json': {schema: CountSchema}},
-  })
-  async updateAll(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(Pit, {partial: true}),
-        },
-      },
-    })
-    pit: Pit,
-    @param.where(Pit) where?: Where<Pit>,
-  ): Promise<Count> {
-    return this.pitRepository.updateAll(pit, where);
   }
 
   @get('/pits/{id}')
@@ -118,7 +97,9 @@ export class PitController {
     @param.path.string('id') id: string,
     @param.filter(Pit, {exclude: 'where'}) filter?: FilterExcludingWhere<Pit>,
   ): Promise<AnyObject> {
-    const data = await this.pitRepository.findById(id, filter);
+    const data = await this.pitRepository.findById(id, {
+      include: [{relation: 'stages'}],
+    });
     return {
       statusCode: 200,
       message: "Pit's details",
