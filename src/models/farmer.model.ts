@@ -1,4 +1,5 @@
-import {Entity, model, property} from '@loopback/repository';
+import {Entity, model, property, hasMany} from '@loopback/repository';
+import {Pit} from './pit.model';
 
 @model({settings: {strict: false}})
 export class Farmer extends Entity {
@@ -72,6 +73,8 @@ export class Farmer extends Entity {
   })
   language: string;
 
+  @hasMany(() => Pit)
+  pits: Pit[];
   // Define well-known properties here
 
   // Indexer property to allow additional data
