@@ -1,3 +1,5 @@
+import {authenticate} from '@loopback/authentication';
+import {inject} from '@loopback/core';
 import {
   AnyObject,
   Count,
@@ -11,6 +13,7 @@ import {
   del,
   get,
   getModelSchemaRef,
+  HttpErrors,
   param,
   patch,
   post,
@@ -18,13 +21,22 @@ import {
   requestBody,
   response,
 } from '@loopback/rest';
+import {SecurityBindings, securityId, UserProfile} from '@loopback/security';
 import {Stage} from '../models';
-import {StageRepository} from '../repositories';
+import {
+  FarmerRepository,
+  PitRepository,
+  StageRepository,
+} from '../repositories';
 
 export class StageController {
   constructor(
     @repository(StageRepository)
     public stageRepository: StageRepository,
+    @repository(PitRepository)
+    public pitRepository: PitRepository,
+    @repository(FarmerRepository)
+    public farmerRepository: FarmerRepository,
   ) {}
 
   @post('/stages')
@@ -32,6 +44,7 @@ export class StageController {
     description: 'Stage model instance',
     content: {'application/json': {schema: getModelSchemaRef(Stage)}},
   })
+  @authenticate('jwt')
   async create(
     @requestBody({
       content: {
@@ -44,7 +57,38 @@ export class StageController {
       },
     })
     stage: Omit<Stage, 'id'>,
+    @inject(SecurityBindings.USER)
+    currentUserProfile: UserProfile,
   ): Promise<AnyObject> {
+    const userId = currentUserProfile[securityId];
+
+    if (!stage.pitId) {
+      const errorMessage = `pitId is missing`;
+      throw new HttpErrors[422](errorMessage);
+    }
+
+    const pitCheck = await this.pitRepository.findById(stage.pitId);
+    if (!pitCheck) {
+      const errorMessage = `pitId ${stage.pitId} does not exist`;
+      throw new HttpErrors[404](errorMessage);
+    }
+
+    if (stage.stageName !== 'maintenance') {
+      const existingStage = await this.stageRepository.findOne({
+        where: {
+          pitId: stage.pitId,
+          stageName: stage.stageName,
+        },
+      });
+      if (existingStage) {
+        throw new HttpErrors[409](
+          `The stageName '${stage.stageName}' already exists for this pit`,
+        );
+      }
+    }
+
+    stage.updatedBy = userId;
+
     const data = await this.stageRepository.create(stage);
     return {
       statusCode: 201,

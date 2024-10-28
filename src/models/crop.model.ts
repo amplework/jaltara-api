@@ -26,6 +26,18 @@ export class Crop extends Entity {
   })
   photo?: string;
 
+  @property({
+    type: 'date',
+    default: () => new Date(),
+  })
+  created?: string;
+
+  @property({
+    type: 'date',
+    default: () => new Date(),
+  })
+  modified?: string;
+
   // Define well-known properties here
 
   // Indexer property to allow additional data

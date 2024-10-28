@@ -1,4 +1,4 @@
-import {Entity, model, property, hasMany} from '@loopback/repository';
+import {Entity, hasMany, model, property} from '@loopback/repository';
 import {Stage} from './stage.model';
 
 @model({settings: {strict: false}})
@@ -31,6 +31,18 @@ export class Equipment extends Entity {
     type: 'string',
   })
   photo?: string;
+
+  @property({
+    type: 'date',
+    default: () => new Date(),
+  })
+  created?: string;
+
+  @property({
+    type: 'date',
+    default: () => new Date(),
+  })
+  modified?: string;
 
   @hasMany(() => Stage)
   stages: Stage[];

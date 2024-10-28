@@ -25,7 +25,7 @@ export class Pit extends Entity {
 
   @property({
     type: 'string',
-    required: true,
+    required: false,
   })
   photo: string;
 
@@ -46,6 +46,18 @@ export class Pit extends Entity {
     required: true,
   })
   stage: string;
+
+  @property({
+    type: 'date',
+    default: () => new Date(),
+  })
+  created?: string;
+
+  @property({
+    type: 'date',
+    default: () => new Date(),
+  })
+  modified?: string;
 
   @belongsTo(() => Farmer)
   farmerId: string;

@@ -1,4 +1,4 @@
-import {Entity, model, property, hasMany} from '@loopback/repository';
+import {Entity, hasMany, model, property} from '@loopback/repository';
 import {Pit} from './pit.model';
 
 @model({settings: {strict: false}})
@@ -72,6 +72,18 @@ export class Farmer extends Entity {
     required: true,
   })
   language: string;
+
+  @property({
+    type: 'date',
+    default: () => new Date(),
+  })
+  created?: string;
+
+  @property({
+    type: 'date',
+    default: () => new Date(),
+  })
+  modified?: string;
 
   @hasMany(() => Pit)
   pits: Pit[];

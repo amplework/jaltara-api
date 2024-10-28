@@ -1,4 +1,5 @@
 import {Entity, model, property} from '@loopback/repository';
+import {HttpErrors} from '@loopback/rest';
 
 @model({settings: {strict: false}})
 export class Stage extends Entity {
@@ -29,9 +30,9 @@ export class Stage extends Entity {
 
   @property({
     type: 'string',
-    required: true,
+    required: false,
   })
-  equipmentId: string;
+  equipmentId?: string;
 
   @property({
     type: 'string',
@@ -45,15 +46,9 @@ export class Stage extends Entity {
 
   @property({
     type: 'string',
-    required: true,
+    required: false,
   })
-  createdBy: string;
-
-  @property({
-    type: 'string',
-    required: true,
-  })
-  updatedBy: string;
+  updatedBy?: string;
 
   // Define well-known properties here
 
@@ -63,9 +58,29 @@ export class Stage extends Entity {
 
   constructor(data?: Partial<Stage>) {
     super(data);
+    this.validateConditionalFields(data);
+  }
+
+  private validateConditionalFields(data?: Partial<Stage>) {
+    if (data?.stageName === 'digging' && !data?.equipmentId) {
+      throw new HttpErrors.UnprocessableEntity(
+        'equipmentId is required when stageName is "digging".',
+      );
+    }
+    if (data?.stageName === 'maintenance') {
+      if (!data?.maintenanceType) {
+        throw new HttpErrors.UnprocessableEntity(
+          'maintenanceType is required when stageName is "maintenance".',
+        );
+      }
+      if (!data?.briefMaintenance) {
+        throw new HttpErrors.UnprocessableEntity(
+          'briefMaintenance is required when stageName is "maintenance".',
+        );
+      }
+    }
   }
 }
-
 export interface StageRelations {
   // describe navigational properties here
 }

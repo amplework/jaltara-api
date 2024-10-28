@@ -11,6 +11,7 @@ import {
   del,
   get,
   getModelSchemaRef,
+  HttpErrors,
   param,
   patch,
   post,
@@ -19,12 +20,14 @@ import {
   response,
 } from '@loopback/rest';
 import {Pit} from '../models';
-import {PitRepository} from '../repositories';
+import {FarmerRepository, PitRepository} from '../repositories';
 
 export class PitController {
   constructor(
     @repository(PitRepository)
     public pitRepository: PitRepository,
+    @repository(FarmerRepository)
+    public farmerRepository: FarmerRepository,
   ) {}
 
   @post('/pits')
@@ -45,6 +48,15 @@ export class PitController {
     })
     pit: Omit<Pit, 'id'>,
   ): Promise<AnyObject> {
+    if (!pit.farmerId) {
+      const errorMessage = `farmerId is missing`;
+      throw new HttpErrors[422](errorMessage);
+    }
+    const farmerCheck = await this.farmerRepository.findById(pit.farmerId);
+    if (!farmerCheck) {
+      const errorMessage = `Farmer ${pit.farmerId} is not exists`;
+      throw new HttpErrors[404](errorMessage);
+    }
     const data = await this.pitRepository.create(pit);
     return {
       statusCode: 201,

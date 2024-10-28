@@ -1,11 +1,8 @@
 import {
   AnyObject,
-  Count,
-  CountSchema,
   Filter,
   FilterExcludingWhere,
   repository,
-  Where,
 } from '@loopback/repository';
 import {
   del,
@@ -76,31 +73,14 @@ export class FarmerController {
     },
   })
   async find(@param.filter(Farmer) filter?: Filter<Farmer>): Promise<any> {
-    const data = await this.farmerRepository.find(filter);
+    const data = await this.farmerRepository.find({
+      include: [{relation: 'pits'}],
+    });
     return {
       statusCode: 200,
       message: "Farmer's list",
       data: data,
     };
-  }
-
-  @patch('/farmers')
-  @response(200, {
-    description: 'Farmer PATCH success count',
-    content: {'application/json': {schema: CountSchema}},
-  })
-  async updateAll(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(Farmer, {partial: true}),
-        },
-      },
-    })
-    farmer: Farmer,
-    @param.where(Farmer) where?: Where<Farmer>,
-  ): Promise<Count> {
-    return this.farmerRepository.updateAll(farmer, where);
   }
 
   @get('/farmers/{id}')
@@ -117,7 +97,9 @@ export class FarmerController {
     @param.filter(Farmer, {exclude: 'where'})
     filter?: FilterExcludingWhere<Farmer>,
   ): Promise<AnyObject> {
-    const data = await this.farmerRepository.findById(id, filter);
+    const data = await this.farmerRepository.findById(id, {
+      include: [{relation: 'pits'}],
+    });
     return {
       statusCode: 200,
       message: 'Farmer details',
