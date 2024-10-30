@@ -40,20 +40,10 @@ export class Farmer extends Entity {
   land: number;
 
   @property({
-    type: 'string',
-  })
-  crops?: string;
-
-  @property({
     type: 'number',
     required: true,
   })
   familyMemberNumber: number;
-
-  @property({
-    type: 'string',
-  })
-  farmingChallenge?: string;
 
   @property({
     type: 'string',

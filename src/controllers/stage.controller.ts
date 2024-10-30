@@ -2,12 +2,9 @@ import {authenticate} from '@loopback/authentication';
 import {inject} from '@loopback/core';
 import {
   AnyObject,
-  Count,
-  CountSchema,
   Filter,
   FilterExcludingWhere,
   repository,
-  Where,
 } from '@loopback/repository';
 import {
   del,
@@ -118,26 +115,7 @@ export class StageController {
     };
   }
 
-  @patch('/stages')
-  @response(200, {
-    description: 'Stage PATCH success count',
-    content: {'application/json': {schema: CountSchema}},
-  })
-  async updateAll(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(Stage, {partial: true}),
-        },
-      },
-    })
-    stage: Stage,
-    @param.where(Stage) where?: Where<Stage>,
-  ): Promise<Count> {
-    return this.stageRepository.updateAll(stage, where);
-  }
-
-  @get('/stages/{id}')
+  @get('/stages/{pitId}')
   @response(200, {
     description: 'Stage model instance',
     content: {

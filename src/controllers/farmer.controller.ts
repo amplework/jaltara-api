@@ -1,6 +1,5 @@
 import {
   AnyObject,
-  Filter,
   FilterExcludingWhere,
   repository,
 } from '@loopback/repository';
@@ -72,9 +71,13 @@ export class FarmerController {
       },
     },
   })
-  async find(@param.filter(Farmer) filter?: Filter<Farmer>): Promise<any> {
+  async find(@param.query.string('village') village: string): Promise<any> {
+    let where: any = {
+      village: village,
+    };
     const data = await this.farmerRepository.find({
-      include: [{relation: 'pits'}],
+      order: ['created DESC'],
+      where: where,
     });
     return {
       statusCode: 200,
