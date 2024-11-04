@@ -12,7 +12,6 @@ export class Well extends Entity {
 
   @property({
     type: 'string',
-    required: true,
   })
   villageId: string;
 

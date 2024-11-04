@@ -30,9 +30,7 @@ export class JWTService implements TokenService {
     let userProfile: UserProfile;
 
     try {
-      // decode user profile from token
       const decodedToken = await verifyAsync(token, this.jwtSecret);
-      // don't copy over  token field 'iat' and 'exp', nor 'email' to user profile
       userProfile = Object.assign(
         {[securityId]: '', name: ''},
         {
@@ -85,7 +83,6 @@ export class JWTService implements TokenService {
     };
 
     let token: string,
-      // eslint-disable-next-line prefer-const
       resetExpireIn = 600; // 10 minutes;
     try {
       token = await signAsync(userInfoForToken, this.jwtSecret, {

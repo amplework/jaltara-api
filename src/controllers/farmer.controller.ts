@@ -1,3 +1,5 @@
+import {authenticate} from '@loopback/authentication';
+import {inject} from '@loopback/core';
 import {
   AnyObject,
   FilterExcludingWhere,
@@ -15,13 +17,17 @@ import {
   requestBody,
   response,
 } from '@loopback/rest';
+import {SecurityBindings, UserProfile} from '@loopback/security';
 import {Farmer} from '../models';
-import {FarmerRepository} from '../repositories';
+import {FarmerRepository, GeographicEntityRepository} from '../repositories';
 
 export class FarmerController {
   constructor(
     @repository(FarmerRepository)
     public farmerRepository: FarmerRepository,
+
+    @repository(GeographicEntityRepository)
+    public geographicEntityRepository: GeographicEntityRepository,
   ) {}
 
   @post('/farmers')
@@ -71,9 +77,14 @@ export class FarmerController {
       },
     },
   })
-  async find(@param.query.string('village') village: string): Promise<any> {
+  @authenticate('jwt')
+  async find(
+    @inject(SecurityBindings.USER)
+    currentUserProfile: UserProfile,
+    @param.query.string('villageId') villageId: string,
+  ): Promise<any> {
     let where: any = {
-      village: village,
+      villageId: villageId,
     };
     const data = await this.farmerRepository.find({
       order: ['created DESC'],

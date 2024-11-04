@@ -19,14 +19,13 @@ import {
   response,
 } from '@loopback/rest';
 import {SecurityBindings, securityId, UserProfile} from '@loopback/security';
-import _ from 'lodash';
 import {PasswordHasherBindings, TokenServiceBindings} from '../keys';
 import {User} from '../models';
 import {UserCodeRepository, UserRepository} from '../repositories';
 import {PasswordHasher} from '../services/hash.password.bcryptjs';
 import {TokenService} from '../services/jwt-service';
 import {MyUserService} from '../services/user-service';
-import {NewUserResponse, UserProfileSchema} from '../utils/type-schema';
+import {UserProfileSchema} from '../utils/type-schema';
 
 export class UserController {
   constructor(
@@ -66,54 +65,37 @@ export class UserController {
     })
     user: Omit<User, 'id'>,
   ): Promise<any> {
-    const phoneExists = await this.userRepository.findOne({
-      where: {
-        phone: user.phone,
-      },
+    const existingUser = await this.userRepository.findOne({
+      where: {phone: user.phone},
     });
-    if (phoneExists) {
-      this.userRepository.userCredential(phoneExists.id);
 
-      const userProfile = await this.userService.getUserProfile(phoneExists);
+    const getUserResponse = async (userData: User) => {
+      const userProfile = await this.userService.getUserProfile(userData);
       const token = await this.jwtService.generateToken(userProfile);
-
-      const result: NewUserResponse = _.extend({}, phoneExists, {
-        token,
-      });
 
       return {
         statusCode: 200,
-        message: 'Authentication successful',
+        message: existingUser
+          ? 'Authentication successful'
+          : 'User added successfully.',
         data: {
-          id: result.id,
-          name: result.name,
-          token: token,
+          id: userData.id,
+          name: userData.name,
+          token,
         },
       };
+    };
+
+    if (existingUser) {
+      return getUserResponse(existingUser);
     }
 
-    const savedUser = await this.userRepository.create(
-      _.omit(user, ['password']),
-    );
-
-    if (!savedUser) {
+    const newUser = await this.userRepository.create(user);
+    if (!newUser) {
       throw new HttpErrors.BadRequest('Error in creating new User!');
     }
 
-    this.userRepository.userCredential(savedUser.id);
-
-    const userProfile = await this.userService.getUserProfile(savedUser);
-    const token = await this.jwtService.generateToken(userProfile);
-
-    const result: NewUserResponse = _.extend({}, savedUser, {
-      token,
-    });
-
-    return {
-      statusCode: 200,
-      message: 'User added successfully.',
-      data: result,
-    };
+    return getUserResponse(newUser);
   }
 
   @get('/user/me', {
