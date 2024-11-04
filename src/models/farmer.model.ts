@@ -28,12 +28,6 @@ export class Farmer extends Entity {
   photo?: string;
 
   @property({
-    type: 'string',
-    required: true,
-  })
-  village: string;
-
-  @property({
     type: 'number',
     required: true,
   })
@@ -77,6 +71,11 @@ export class Farmer extends Entity {
 
   @hasMany(() => Pit)
   pits: Pit[];
+
+  @property({
+    type: 'string',
+  })
+  villageId?: string;
   // Define well-known properties here
 
   // Indexer property to allow additional data

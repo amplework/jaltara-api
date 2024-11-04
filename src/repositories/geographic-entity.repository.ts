@@ -1,15 +1,21 @@
-import {inject} from '@loopback/core';
-import {DefaultCrudRepository} from '@loopback/repository';
+import {inject, Getter} from '@loopback/core';
+import {DefaultCrudRepository, repository, HasManyRepositoryFactory} from '@loopback/repository';
 import {DbDataSource} from '../datasources';
-import {GeographicEntity, GeographicEntityRelations} from '../models';
+import {GeographicEntity, GeographicEntityRelations, Farmer} from '../models';
+import {FarmerRepository} from './farmer.repository';
 
 export class GeographicEntityRepository extends DefaultCrudRepository<
   GeographicEntity,
   typeof GeographicEntity.prototype.id,
   GeographicEntityRelations
 > {
-  constructor(@inject('datasources.db') dataSource: DbDataSource) {
+
+  public readonly farmers: HasManyRepositoryFactory<Farmer, typeof GeographicEntity.prototype.id>;
+
+  constructor(@inject('datasources.db') dataSource: DbDataSource, @repository.getter('FarmerRepository') protected farmerRepositoryGetter: Getter<FarmerRepository>,) {
     super(GeographicEntity, dataSource);
+    this.farmers = this.createHasManyRepositoryFactoryFor('farmers', farmerRepositoryGetter,);
+    this.registerInclusionResolver('farmers', this.farmers.inclusionResolver);
   }
 
   async findChildren(parentId: string): Promise<GeographicEntity[]> {

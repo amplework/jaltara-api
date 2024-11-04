@@ -1,5 +1,6 @@
-import {Entity, hasOne, model, property} from '@loopback/repository';
+import {Entity, hasOne, model, property, belongsTo} from '@loopback/repository';
 import {UserCredential} from './user-credential.model';
+import {GeographicEntity} from './geographic-entity.model';
 
 @model({settings: {strict: false}})
 export class User extends Entity {
@@ -37,14 +38,6 @@ export class User extends Entity {
 
   @property({
     type: 'string',
-    jsonSchema: {
-      minLength: 6,
-    },
-  })
-  password?: string;
-
-  @property({
-    type: 'string',
   })
   gender?: string;
 
@@ -53,41 +46,50 @@ export class User extends Entity {
   })
   image?: string;
 
-  @property({
-    type: 'number',
-    default: 0,
-  })
-  rank?: number;
 
-  @property({
-    type: 'number',
-    default: 0,
-  })
-  rating?: number;
+  // @property({
+  //   type: 'number',
+  //   default: 0,
+  // })
+  // rank?: number;
 
-  @property({
-    type: 'number',
-    default: 0,
-  })
-  points?: number;
+  // @property({
+  @belongsTo(() => GeographicEntity)
+  geographicId: string;
+  //   type: 'number',
+  //   default: 0,
+  // })
+  // rating?: number;
 
-  @property({
-    type: 'number',
-    default: 0,
-  })
-  selfPoint?: number;
+  // @property({
+  //   type: 'number',
+  //   default: 0,
+  // })
+  // points?: number;
 
-  @property({
-    type: 'number',
-    default: 0,
-  })
-  helpPoint?: number;
+  // @property({
+  //   type: 'number',
+  //   default: 0,
+  // })
+  // selfPoint?: number;
+
+  // @property({
+  //   type: 'number',
+  //   default: 0,
+  // })
+  // helpPoint?: number;
 
   @property({
     type: 'string',
     default: 'active',
   })
   status?: string;
+
+  @property({
+    type: 'string',
+    required: true,
+  })
+  language: string;
 
   @property({
     type: 'object',

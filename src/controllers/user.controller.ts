@@ -184,13 +184,12 @@ export class UserController {
     };
   }
 
-  @patch('/users/{id}')
+  @patch('/user-update')
   @response(204, {
     description: 'User PATCH success',
   })
   @authenticate('jwt')
   async updateById(
-    @param.path.string('id') id: string,
     @requestBody({
       content: {
         'application/json': {
@@ -201,13 +200,18 @@ export class UserController {
     user: User,
     @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
   ): Promise<any> {
-    const {user_id} = currentUserProfile;
+    const {id} = currentUserProfile;
 
-    const userExists = await this.userRepository.findById(user_id);
+    const userExists = await this.userRepository.findById(id);
     if (!userExists) {
       throw new HttpErrors.NotFound('User account not found');
     }
     await this.userRepository.updateById(id, user);
+
+    return {
+      statusCode: 200,
+      message: 'User details updated',
+    };
   }
 
   @put('/users/{id}')
@@ -216,9 +220,18 @@ export class UserController {
   })
   async replaceById(
     @param.path.string('id') id: string,
-    @requestBody() user: User,
-  ): Promise<void> {
-    await this.userRepository.replaceById(id, user);
+    @requestBody() user: any,
+  ): Promise<any> {
+    const userExists = await this.userRepository.findById(id);
+    if (!userExists) {
+      throw new HttpErrors.NotFound('User account not found');
+    }
+    const data = await this.userRepository.updateById(id, user);
+    return {
+      statusCode: 200,
+      message: 'User details updated',
+      data: data,
+    };
   }
 
   @del('/users/{id}')
