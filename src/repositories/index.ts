@@ -8,3 +8,4 @@ export * from './stage.repository';
 export * from './equipment.repository';
 export * from './log.repository';
 export * from './crop.repository';
+export * from './geographic-entity.repository';

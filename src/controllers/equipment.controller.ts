@@ -1,11 +1,8 @@
 import {
   AnyObject,
-  Count,
-  CountSchema,
   Filter,
   FilterExcludingWhere,
   repository,
-  Where,
 } from '@loopback/repository';
 import {
   del,
@@ -74,25 +71,6 @@ export class EquipmentController {
       message: "Equipment's List",
       data: data,
     };
-  }
-
-  @patch('/equipment')
-  @response(200, {
-    description: 'Equipment PATCH success count',
-    content: {'application/json': {schema: CountSchema}},
-  })
-  async updateAll(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(Equipment, {partial: true}),
-        },
-      },
-    })
-    equipment: Equipment,
-    @param.where(Equipment) where?: Where<Equipment>,
-  ): Promise<Count> {
-    return this.equipmentRepository.updateAll(equipment, where);
   }
 
   @get('/equipment/{id}')
