@@ -60,32 +60,32 @@ export class PitController {
     const userId = currentUserProfile[securityId];
 
     if (!pit.farmerId) {
-      const errorMessage = `farmerId is missing`;
-      throw new HttpErrors[422](errorMessage);
+      throw new HttpErrors.UnprocessableEntity('farmerId is missing');
     }
-    const farmerCheck = await this.farmerRepository.findById(pit.farmerId);
-    if (!farmerCheck) {
-      const errorMessage = `Farmer ${pit.farmerId} is not exists`;
-      throw new HttpErrors[404](errorMessage);
-    }
-    const createPit = await this.pitRepository.create(
-      _.omit(pit, ['stage', 'equipmentId']),
-    );
 
-    if (createPit && createPit.id) {
-      let stageObject: object = {
-        pitId: createPit.id,
+    const farmerExists = await this.farmerRepository.exists(pit.farmerId);
+    if (!farmerExists) {
+      throw new HttpErrors.NotFound(`Farmer ${pit.farmerId} does not exist`);
+    }
+
+    const newPitData = _.omit(pit, ['stage', 'equipmentId']);
+    const createdPit = await this.pitRepository.create(newPitData);
+
+    if (createdPit?.id) {
+      const stageData = {
+        pitId: createdPit.id,
         stageName: pit.stage,
         photo: pit.photo,
         equipmentId: pit.equipmentId,
         updatedBy: userId,
       };
-      const createPitStage = await this.stageRepository.create(stageObject);
+      await this.stageRepository.create(stageData);
     }
+
     return {
       statusCode: 201,
       message: 'Pit added successfully',
-      data: createPit,
+      data: createdPit,
     };
   }
 
