@@ -14,7 +14,6 @@ import {
   param,
   patch,
   post,
-  put,
   requestBody,
   response,
 } from '@loopback/rest';
@@ -153,17 +152,6 @@ export class StageController {
     stage: Stage,
   ): Promise<void> {
     await this.stageRepository.updateById(id, stage);
-  }
-
-  @put('/stages/{id}')
-  @response(204, {
-    description: 'Stage PUT success',
-  })
-  async replaceById(
-    @param.path.string('id') id: string,
-    @requestBody() stage: Stage,
-  ): Promise<void> {
-    await this.stageRepository.replaceById(id, stage);
   }
 
   @del('/stages/{id}')

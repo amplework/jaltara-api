@@ -1,3 +1,5 @@
+import {authenticate} from '@loopback/authentication';
+import {inject} from '@loopback/core';
 import {
   AnyObject,
   FilterExcludingWhere,
@@ -15,11 +17,19 @@ import {
   requestBody,
   response,
 } from '@loopback/rest';
+import {SecurityBindings, securityId, UserProfile} from '@loopback/security';
+import _ from 'lodash';
 import {Pit} from '../models';
-import {FarmerRepository, PitRepository} from '../repositories';
+import {
+  FarmerRepository,
+  PitRepository,
+  StageRepository,
+} from '../repositories';
 
 export class PitController {
   constructor(
+    @repository(StageRepository)
+    public stageRepository: StageRepository,
     @repository(PitRepository)
     public pitRepository: PitRepository,
     @repository(FarmerRepository)
@@ -31,6 +41,7 @@ export class PitController {
     description: 'Pit model instance',
     content: {'application/json': {schema: getModelSchemaRef(Pit)}},
   })
+  @authenticate('jwt')
   async create(
     @requestBody({
       content: {
@@ -43,7 +54,11 @@ export class PitController {
       },
     })
     pit: Omit<Pit, 'id'>,
+    @inject(SecurityBindings.USER)
+    currentUserProfile: UserProfile,
   ): Promise<AnyObject> {
+    const userId = currentUserProfile[securityId];
+
     if (!pit.farmerId) {
       const errorMessage = `farmerId is missing`;
       throw new HttpErrors[422](errorMessage);
@@ -53,11 +68,24 @@ export class PitController {
       const errorMessage = `Farmer ${pit.farmerId} is not exists`;
       throw new HttpErrors[404](errorMessage);
     }
-    const data = await this.pitRepository.create(pit);
+    const createPit = await this.pitRepository.create(
+      _.omit(pit, ['stage', 'equipmentId']),
+    );
+
+    if (createPit && createPit.id) {
+      let stageObject: object = {
+        pitId: createPit.id,
+        stageName: pit.stage,
+        photo: pit.photo,
+        equipmentId: pit.equipmentId,
+        updatedBy: userId,
+      };
+      const createPitStage = await this.stageRepository.create(stageObject);
+    }
     return {
       statusCode: 201,
       message: 'Pit added successfully',
-      data: data,
+      data: createPit,
     };
   }
 
@@ -75,7 +103,22 @@ export class PitController {
   })
   async find(): Promise<any> {
     const data = await this.pitRepository.find({
-      include: [{relation: 'stages'}],
+      order: ['created DESC'],
+      include: [
+        {
+          relation: 'stages',
+        },
+        {
+          relation: 'farmer',
+          scope: {
+            fields: {
+              id: true,
+              name: true,
+              photo: true,
+            },
+          },
+        },
+      ],
     });
     return {
       statusCode: 200,
@@ -98,7 +141,19 @@ export class PitController {
     @param.filter(Pit, {exclude: 'where'}) filter?: FilterExcludingWhere<Pit>,
   ): Promise<AnyObject> {
     const data = await this.pitRepository.findById(id, {
-      include: [{relation: 'stages'}],
+      include: [
+        {relation: 'stages'},
+        {
+          relation: 'farmer',
+          scope: {
+            fields: {
+              id: true,
+              name: true,
+              photo: true,
+            },
+          },
+        },
+      ],
     });
     return {
       statusCode: 200,
