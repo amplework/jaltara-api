@@ -8,19 +8,32 @@ import {
   del,
   get,
   getModelSchemaRef,
+  HttpErrors,
   param,
   patch,
   post,
   requestBody,
   response,
 } from '@loopback/rest';
+import {differenceInMinutes, isBefore} from 'date-fns';
+import _ from 'lodash';
 import {Log} from '../models';
-import {LogRepository} from '../repositories';
+import {
+  EquipmentRepository,
+  LogRepository,
+  PitRepository,
+} from '../repositories';
 
 export class LogController {
   constructor(
     @repository(LogRepository)
     public logRepository: LogRepository,
+
+    @repository(PitRepository)
+    public pitRepository: PitRepository,
+
+    @repository(EquipmentRepository)
+    public equipmentRepository: EquipmentRepository,
   ) {}
 
   @post('/logs')
@@ -41,7 +54,40 @@ export class LogController {
     })
     log: Omit<Log, 'id'>,
   ): Promise<AnyObject> {
-    const data = await this.logRepository.create(log);
+    const equipmentExists = await this.equipmentRepository.exists(
+      log.equipmentId,
+    );
+    if (!equipmentExists) {
+      throw new HttpErrors.NotFound(
+        `Equipment ${log.equipmentId} does not exist`,
+      );
+    }
+
+    if (log.type === 'pit' && !log.pitId) {
+      throw new HttpErrors.BadRequest('pitId is required when type is "pit".');
+    }
+    if (log.type === 'well' && !log.wellId) {
+      throw new HttpErrors.BadRequest(
+        'wellId is required when type is "well".',
+      );
+    }
+
+    const startTime = new Date(log.startTime);
+    const endTime = new Date(log.endTime);
+
+    if (isBefore(endTime, startTime)) {
+      throw new HttpErrors.BadRequest('End time cannot be before start time.');
+    }
+
+    // Calculate the difference in minutes
+    const totalMinutes = differenceInMinutes(endTime, startTime);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    log.timeRecord = `${hours}:${minutes.toString().padStart(2, '0')} hours`;
+
+    const newlogData = _.omit(log, ['stage']);
+
+    const data = await this.logRepository.create(newlogData);
     return {
       statusCode: 201,
       message: 'Log added successfully',

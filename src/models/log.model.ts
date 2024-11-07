@@ -1,4 +1,7 @@
-import {Entity, model, property} from '@loopback/repository';
+import {belongsTo, Entity, model, property} from '@loopback/repository';
+import {Equipment} from './equipment.model';
+import {Pit} from './pit.model';
+import {Well} from './well.model';
 
 @model({settings: {strict: false}})
 export class Log extends Entity {
@@ -8,25 +11,12 @@ export class Log extends Entity {
     generated: true,
   })
   id?: string;
-
-  @property({
-    type: 'string',
-  })
-  pitId?: string;
-
-  @property({
-    type: 'string',
-  })
-  wellId?: string;
-
-  @property({
-    type: 'string',
-  })
-  equipmentId?: string;
-
   @property({
     type: 'string',
     required: true,
+    jsonSchema: {
+      enum: ['well', 'pit'],
+    },
   })
   type: string;
 
@@ -43,6 +33,11 @@ export class Log extends Entity {
   reading: string;
 
   @property({
+    type: 'string',
+  })
+  totalUsages: string;
+
+  @property({
     type: 'date',
     required: true,
   })
@@ -56,7 +51,6 @@ export class Log extends Entity {
 
   @property({
     type: 'string',
-    required: true,
   })
   timeRecord: string;
 
@@ -72,6 +66,14 @@ export class Log extends Entity {
   })
   modified?: string;
 
+  @belongsTo(() => Equipment)
+  equipmentId: string;
+
+  @belongsTo(() => Pit)
+  pitId: string;
+
+  @belongsTo(() => Well)
+  wellId: string;
   // Define well-known properties here
 
   // Indexer property to allow additional data

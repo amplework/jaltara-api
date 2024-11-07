@@ -1,5 +1,6 @@
 import {Entity, hasMany, model, property} from '@loopback/repository';
 import {Stage} from './stage.model';
+import {Log} from './log.model';
 
 @model({settings: {strict: false}})
 export class Equipment extends Entity {
@@ -46,6 +47,9 @@ export class Equipment extends Entity {
 
   @hasMany(() => Stage)
   stages: Stage[];
+
+  @hasMany(() => Log)
+  logs: Log[];
   // Define well-known properties here
 
   // Indexer property to allow additional data

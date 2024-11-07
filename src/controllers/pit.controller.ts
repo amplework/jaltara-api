@@ -29,8 +29,10 @@ export class PitController {
   constructor(
     @repository(StageRepository)
     public stageRepository: StageRepository,
+
     @repository(PitRepository)
     public pitRepository: PitRepository,
+
     @repository(FarmerRepository)
     public farmerRepository: FarmerRepository,
   ) {}

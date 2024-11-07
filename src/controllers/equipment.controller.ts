@@ -1,9 +1,4 @@
-import {
-  AnyObject,
-  Filter,
-  FilterExcludingWhere,
-  repository,
-} from '@loopback/repository';
+import {AnyObject, Filter, repository} from '@loopback/repository';
 import {
   del,
   get,
@@ -81,12 +76,48 @@ export class EquipmentController {
       },
     },
   })
-  async findById(
-    @param.path.string('id') id: string,
-    @param.filter(Equipment, {exclude: 'where'})
-    filter?: FilterExcludingWhere<Equipment>,
-  ): Promise<AnyObject> {
-    const data = await this.equipmentRepository.findById(id, filter);
+  async findById(@param.path.string('id') id: string): Promise<AnyObject> {
+    const data = await this.equipmentRepository.findById(id, {
+      include: [
+        {
+          relation: 'logs',
+          scope: {
+            fields: {
+              id: true,
+              equipmentId: true,
+              pitId: true,
+              startTime: true,
+              endTime: true,
+              timeRecord: true,
+            },
+            include: [
+              {
+                relation: 'pit',
+                scope: {
+                  fields: {
+                    id: true,
+                    pitId: true,
+                    farmerId: true,
+                  },
+                  include: [
+                    {
+                      relation: 'farmer',
+                      scope: {
+                        fields: {
+                          id: true,
+                          name: true,
+                          photo: true,
+                        },
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        },
+      ],
+    });
     return {
       statusCode: 200,
       message: "Equipment's details",
