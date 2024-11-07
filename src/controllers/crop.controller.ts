@@ -1,11 +1,8 @@
 import {
   AnyObject,
-  Count,
-  CountSchema,
   Filter,
   FilterExcludingWhere,
   repository,
-  Where,
 } from '@loopback/repository';
 import {
   del,
@@ -14,7 +11,6 @@ import {
   param,
   patch,
   post,
-  put,
   requestBody,
   response,
 } from '@loopback/rest';
@@ -74,25 +70,6 @@ export class CropController {
     };
   }
 
-  @patch('/crops')
-  @response(200, {
-    description: 'Crop PATCH success count',
-    content: {'application/json': {schema: CountSchema}},
-  })
-  async updateAll(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(Crop, {partial: true}),
-        },
-      },
-    })
-    crop: Crop,
-    @param.where(Crop) where?: Where<Crop>,
-  ): Promise<Count> {
-    return this.cropRepository.updateAll(crop, where);
-  }
-
   @get('/crops/{id}')
   @response(200, {
     description: 'Crop model instance',
@@ -128,26 +105,24 @@ export class CropController {
       },
     })
     crop: Crop,
-  ): Promise<void> {
-    await this.cropRepository.updateById(id, crop);
-  }
-
-  @put('/crops/{id}')
-  @response(204, {
-    description: 'Crop PUT success',
-  })
-  async replaceById(
-    @param.path.string('id') id: string,
-    @requestBody() crop: Crop,
-  ): Promise<void> {
-    await this.cropRepository.replaceById(id, crop);
+  ): Promise<any> {
+    const data = await this.cropRepository.updateById(id, crop);
+    return {
+      statusCode: 200,
+      message: 'Crop updated successfully',
+      data: data,
+    };
   }
 
   @del('/crops/{id}')
   @response(204, {
     description: 'Crop DELETE success',
   })
-  async deleteById(@param.path.string('id') id: string): Promise<void> {
+  async deleteById(@param.path.string('id') id: string): Promise<any> {
     await this.cropRepository.deleteById(id);
+    return {
+      statusCode: 200,
+      message: 'Crop deleted successfully',
+    };
   }
 }

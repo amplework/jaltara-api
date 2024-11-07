@@ -1,11 +1,8 @@
 import {
   AnyObject,
-  Count,
-  CountSchema,
   Filter,
   FilterExcludingWhere,
   repository,
-  Where,
 } from '@loopback/repository';
 import {
   del,
@@ -14,7 +11,6 @@ import {
   param,
   patch,
   post,
-  put,
   requestBody,
   response,
 } from '@loopback/rest';
@@ -74,25 +70,6 @@ export class LogController {
     };
   }
 
-  @patch('/logs')
-  @response(200, {
-    description: 'Log PATCH success count',
-    content: {'application/json': {schema: CountSchema}},
-  })
-  async updateAll(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(Log, {partial: true}),
-        },
-      },
-    })
-    log: Log,
-    @param.where(Log) where?: Where<Log>,
-  ): Promise<Count> {
-    return this.logRepository.updateAll(log, where);
-  }
-
   @get('/logs/{id}')
   @response(200, {
     description: 'Log model instance',
@@ -128,26 +105,23 @@ export class LogController {
       },
     })
     log: Log,
-  ): Promise<void> {
+  ): Promise<any> {
     await this.logRepository.updateById(id, log);
-  }
-
-  @put('/logs/{id}')
-  @response(204, {
-    description: 'Log PUT success',
-  })
-  async replaceById(
-    @param.path.string('id') id: string,
-    @requestBody() log: Log,
-  ): Promise<void> {
-    await this.logRepository.replaceById(id, log);
+    return {
+      statusCode: 200,
+      message: 'Log updated successfully',
+    };
   }
 
   @del('/logs/{id}')
   @response(204, {
     description: 'Log DELETE success',
   })
-  async deleteById(@param.path.string('id') id: string): Promise<void> {
+  async deleteById(@param.path.string('id') id: string): Promise<any> {
     await this.logRepository.deleteById(id);
+    return {
+      statusCode: 200,
+      message: 'Log deleted successfully',
+    };
   }
 }

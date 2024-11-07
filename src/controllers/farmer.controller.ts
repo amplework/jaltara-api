@@ -13,7 +13,6 @@ import {
   param,
   patch,
   post,
-  put,
   requestBody,
   response,
 } from '@loopback/rest';
@@ -135,26 +134,24 @@ export class FarmerController {
       },
     })
     farmer: Farmer,
-  ): Promise<void> {
-    await this.farmerRepository.updateById(id, farmer);
-  }
-
-  @put('/farmers/{id}')
-  @response(204, {
-    description: 'Farmer PUT success',
-  })
-  async replaceById(
-    @param.path.string('id') id: string,
-    @requestBody() farmer: Farmer,
-  ): Promise<void> {
-    await this.farmerRepository.replaceById(id, farmer);
+  ): Promise<any> {
+    const data = await this.farmerRepository.updateById(id, farmer);
+    return {
+      statusCode: 200,
+      message: 'Farmer updated successfully',
+      data: data,
+    };
   }
 
   @del('/farmers/{id}')
   @response(204, {
     description: 'Farmer DELETE success',
   })
-  async deleteById(@param.path.string('id') id: string): Promise<void> {
+  async deleteById(@param.path.string('id') id: string): Promise<any> {
     await this.farmerRepository.deleteById(id);
+    return {
+      statusCode: 200,
+      message: 'Farmer deleted successfully',
+    };
   }
 }

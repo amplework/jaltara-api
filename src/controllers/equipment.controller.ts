@@ -11,7 +11,6 @@ import {
   param,
   patch,
   post,
-  put,
   requestBody,
   response,
 } from '@loopback/rest';
@@ -109,26 +108,24 @@ export class EquipmentController {
       },
     })
     equipment: Equipment,
-  ): Promise<void> {
-    await this.equipmentRepository.updateById(id, equipment);
-  }
-
-  @put('/equipment/{id}')
-  @response(204, {
-    description: 'Equipment PUT success',
-  })
-  async replaceById(
-    @param.path.string('id') id: string,
-    @requestBody() equipment: Equipment,
-  ): Promise<void> {
-    await this.equipmentRepository.replaceById(id, equipment);
+  ): Promise<any> {
+    const data = await this.equipmentRepository.updateById(id, equipment);
+    return {
+      statusCode: 200,
+      message: "Equipment's updated successfully",
+      data: data,
+    };
   }
 
   @del('/equipment/{id}')
   @response(204, {
     description: 'Equipment DELETE success',
   })
-  async deleteById(@param.path.string('id') id: string): Promise<void> {
+  async deleteById(@param.path.string('id') id: string): Promise<any> {
     await this.equipmentRepository.deleteById(id);
+    return {
+      statusCode: 200,
+      message: "Equipment's deleted successfully",
+    };
   }
 }

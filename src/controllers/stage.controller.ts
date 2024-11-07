@@ -82,9 +82,7 @@ export class StageController {
         );
       }
     }
-
     stage.updatedBy = userId;
-
     const data = await this.stageRepository.create(stage);
     return {
       statusCode: 201,
@@ -150,15 +148,23 @@ export class StageController {
       },
     })
     stage: Stage,
-  ): Promise<void> {
+  ): Promise<any> {
     await this.stageRepository.updateById(id, stage);
+    return {
+      statusCode: 200,
+      message: 'Stage updated successfully',
+    };
   }
 
   @del('/stages/{id}')
   @response(204, {
     description: 'Stage DELETE success',
   })
-  async deleteById(@param.path.string('id') id: string): Promise<void> {
+  async deleteById(@param.path.string('id') id: string): Promise<any> {
     await this.stageRepository.deleteById(id);
+    return {
+      statusCode: 200,
+      message: 'Stage deleted successfully',
+    };
   }
 }

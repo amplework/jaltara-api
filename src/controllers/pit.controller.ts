@@ -13,7 +13,6 @@ import {
   param,
   patch,
   post,
-  put,
   requestBody,
   response,
 } from '@loopback/rest';
@@ -176,26 +175,23 @@ export class PitController {
       },
     })
     pit: Pit,
-  ): Promise<void> {
+  ): Promise<any> {
     await this.pitRepository.updateById(id, pit);
-  }
-
-  @put('/pits/{id}')
-  @response(204, {
-    description: 'Pit PUT success',
-  })
-  async replaceById(
-    @param.path.string('id') id: string,
-    @requestBody() pit: Pit,
-  ): Promise<void> {
-    await this.pitRepository.replaceById(id, pit);
+    return {
+      statusCode: 200,
+      message: 'Pit updated successfully',
+    };
   }
 
   @del('/pits/{id}')
   @response(204, {
     description: 'Pit DELETE success',
   })
-  async deleteById(@param.path.string('id') id: string): Promise<void> {
+  async deleteById(@param.path.string('id') id: string): Promise<any> {
     await this.pitRepository.deleteById(id);
+    return {
+      statusCode: 200,
+      message: 'Pit deleted successfully',
+    };
   }
 }

@@ -1,11 +1,8 @@
 import {
   AnyObject,
-  Count,
-  CountSchema,
   Filter,
   FilterExcludingWhere,
   repository,
-  Where,
 } from '@loopback/repository';
 import {
   del,
@@ -14,7 +11,6 @@ import {
   param,
   patch,
   post,
-  put,
   requestBody,
   response,
 } from '@loopback/rest';
@@ -74,25 +70,6 @@ export class WellController {
     };
   }
 
-  @patch('/wells')
-  @response(200, {
-    description: 'Well PATCH success count',
-    content: {'application/json': {schema: CountSchema}},
-  })
-  async updateAll(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(Well, {partial: true}),
-        },
-      },
-    })
-    well: Well,
-    @param.where(Well) where?: Where<Well>,
-  ): Promise<Count> {
-    return this.wellRepository.updateAll(well, where);
-  }
-
   @get('/wells/{id}')
   @response(200, {
     description: 'Well model instance',
@@ -128,26 +105,23 @@ export class WellController {
       },
     })
     well: Well,
-  ): Promise<void> {
+  ): Promise<any> {
     await this.wellRepository.updateById(id, well);
-  }
-
-  @put('/wells/{id}')
-  @response(204, {
-    description: 'Well PUT success',
-  })
-  async replaceById(
-    @param.path.string('id') id: string,
-    @requestBody() well: Well,
-  ): Promise<void> {
-    await this.wellRepository.replaceById(id, well);
+    return {
+      statusCode: 200,
+      message: 'Well added successfully',
+    };
   }
 
   @del('/wells/{id}')
   @response(204, {
     description: 'Well DELETE success',
   })
-  async deleteById(@param.path.string('id') id: string): Promise<void> {
+  async deleteById(@param.path.string('id') id: string): Promise<any> {
     await this.wellRepository.deleteById(id);
+    return {
+      statusCode: 200,
+      message: 'Well deleted successfully',
+    };
   }
 }

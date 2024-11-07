@@ -14,7 +14,6 @@ import {
   param,
   patch,
   post,
-  put,
   requestBody,
   response,
 } from '@loopback/rest';
@@ -196,9 +195,9 @@ export class UserController {
     };
   }
 
-  @put('/users/{id}')
+  @patch('/users/{id}')
   @response(204, {
-    description: 'User PUT success',
+    description: 'User PATCH success',
   })
   async replaceById(
     @param.path.string('id') id: string,
@@ -220,7 +219,11 @@ export class UserController {
   @response(204, {
     description: 'User DELETE success',
   })
-  async deleteById(@param.path.string('id') id: string): Promise<void> {
+  async deleteById(@param.path.string('id') id: string): Promise<any> {
     await this.userRepository.deleteById(id);
+    return {
+      statusCode: 200,
+      message: 'User deleted successfully',
+    };
   }
 }

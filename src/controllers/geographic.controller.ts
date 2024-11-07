@@ -11,7 +11,6 @@ import {
   param,
   patch,
   post,
-  put,
   requestBody,
   response,
 } from '@loopback/rest';
@@ -126,26 +125,23 @@ export class GeographicController {
       },
     })
     geographicEntity: GeographicEntity,
-  ): Promise<void> {
+  ): Promise<any> {
     await this.geographicEntityRepository.updateById(id, geographicEntity);
-  }
-
-  @put('/geographic-entities/{id}')
-  @response(204, {
-    description: 'GeographicEntity PUT success',
-  })
-  async replaceById(
-    @param.path.string('id') id: string,
-    @requestBody() geographicEntity: GeographicEntity,
-  ): Promise<void> {
-    await this.geographicEntityRepository.replaceById(id, geographicEntity);
+    return {
+      statusCode: 200,
+      message: 'Geographic-Entities updated successfully',
+    };
   }
 
   @del('/geographic-entities/{id}')
   @response(204, {
     description: 'GeographicEntity DELETE success',
   })
-  async deleteById(@param.path.string('id') id: string): Promise<void> {
+  async deleteById(@param.path.string('id') id: string): Promise<any> {
     await this.geographicEntityRepository.deleteById(id);
+    return {
+      statusCode: 200,
+      message: 'Geographic-Entities deleted successfully',
+    };
   }
 }
