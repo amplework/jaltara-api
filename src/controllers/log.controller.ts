@@ -16,12 +16,12 @@ import {
   response,
 } from '@loopback/rest';
 import {differenceInMinutes, isBefore} from 'date-fns';
-import _ from 'lodash';
 import {Log} from '../models';
 import {
   EquipmentRepository,
   LogRepository,
   PitRepository,
+  WellRepository,
 } from '../repositories';
 
 export class LogController {
@@ -34,6 +34,9 @@ export class LogController {
 
     @repository(EquipmentRepository)
     public equipmentRepository: EquipmentRepository,
+
+    @repository(WellRepository)
+    public wellRepository: WellRepository,
   ) {}
 
   @post('/logs')
@@ -57,18 +60,36 @@ export class LogController {
     const equipmentExists = await this.equipmentRepository.exists(
       log.equipmentId,
     );
+
     if (!equipmentExists) {
       throw new HttpErrors.NotFound(
         `Equipment ${log.equipmentId} does not exist`,
       );
     }
 
-    if (log.type === 'pit' && !log.pitId) {
-      throw new HttpErrors.BadRequest('pitId is required when type is "pit".');
-    }
-    if (log.type === 'well' && !log.wellId) {
+    if (log.type === 'pit') {
+      if (!log.pitId) {
+        throw new HttpErrors.BadRequest(
+          'pitId is required when type is "pit".',
+        );
+      }
+      const pitExists = await this.pitRepository.exists(log.pitId);
+      if (!pitExists) {
+        throw new HttpErrors.NotFound(`Pit ${log.pitId} does not exist`);
+      }
+    } else if (log.type === 'well') {
+      if (!log.wellId) {
+        throw new HttpErrors.BadRequest(
+          'wellId is required when type is "well".',
+        );
+      }
+      const wellExists = await this.wellRepository.exists(log.wellId);
+      if (!wellExists) {
+        throw new HttpErrors.NotFound(`Well ${log.wellId} does not exist`);
+      }
+    } else {
       throw new HttpErrors.BadRequest(
-        'wellId is required when type is "well".',
+        'Invalid type. Type must be either "pit" or "well".',
       );
     }
 
@@ -79,15 +100,12 @@ export class LogController {
       throw new HttpErrors.BadRequest('End time cannot be before start time.');
     }
 
-    // Calculate the difference in minutes
     const totalMinutes = differenceInMinutes(endTime, startTime);
     const hours = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;
-    log.timeRecord = `${hours}:${minutes.toString().padStart(2, '0')} hours`;
+    log.timeRecord = `${hours}:${minutes.toString().padStart(2, '0')} Hrs.`;
 
-    const newlogData = _.omit(log, ['stage']);
-
-    const data = await this.logRepository.create(newlogData);
+    const data = await this.logRepository.create(log);
     return {
       statusCode: 201,
       message: 'Log added successfully',
