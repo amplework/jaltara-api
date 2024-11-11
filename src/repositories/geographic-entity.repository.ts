@@ -1,7 +1,11 @@
-import {inject, Getter} from '@loopback/core';
-import {DefaultCrudRepository, repository, HasManyRepositoryFactory} from '@loopback/repository';
+import {Getter, inject} from '@loopback/core';
+import {
+  DefaultCrudRepository,
+  HasManyRepositoryFactory,
+  repository,
+} from '@loopback/repository';
 import {DbDataSource} from '../datasources';
-import {GeographicEntity, GeographicEntityRelations, Farmer} from '../models';
+import {Farmer, GeographicEntity, GeographicEntityRelations} from '../models';
 import {FarmerRepository} from './farmer.repository';
 
 export class GeographicEntityRepository extends DefaultCrudRepository<
@@ -9,12 +13,21 @@ export class GeographicEntityRepository extends DefaultCrudRepository<
   typeof GeographicEntity.prototype.id,
   GeographicEntityRelations
 > {
+  public readonly farmers: HasManyRepositoryFactory<
+    Farmer,
+    typeof GeographicEntity.prototype.id
+  >;
 
-  public readonly farmers: HasManyRepositoryFactory<Farmer, typeof GeographicEntity.prototype.id>;
-
-  constructor(@inject('datasources.db') dataSource: DbDataSource, @repository.getter('FarmerRepository') protected farmerRepositoryGetter: Getter<FarmerRepository>,) {
+  constructor(
+    @inject('datasources.db') dataSource: DbDataSource,
+    @repository.getter('FarmerRepository')
+    protected farmerRepositoryGetter: Getter<FarmerRepository>,
+  ) {
     super(GeographicEntity, dataSource);
-    this.farmers = this.createHasManyRepositoryFactoryFor('farmers', farmerRepositoryGetter,);
+    this.farmers = this.createHasManyRepositoryFactoryFor(
+      'farmers',
+      farmerRepositoryGetter,
+    );
     this.registerInclusionResolver('farmers', this.farmers.inclusionResolver);
   }
 
@@ -24,6 +37,47 @@ export class GeographicEntityRepository extends DefaultCrudRepository<
 
   async findParent(entityId: string): Promise<GeographicEntity | null> {
     const entity = await this.findById(entityId);
-    return entity.parentId ? this.findById(entity.parentId) : null;
+    return entity.parentId ? await this.findById(entity.parentId) : null;
+  }
+
+  async fetchHierarchy(id: string): Promise<GeographicEntity | null> {
+    const entity = await this.findById(id, {
+      include: [{relation: 'farmers'}],
+    });
+
+    if (!entity) return null;
+    const populateChildren = async (node: GeographicEntity) => {
+      if (!node.id) return;
+      const children = await this.findChildren(node.id);
+      node.children = children;
+
+      for (const child of children) {
+        await populateChildren(child);
+      }
+    };
+
+    await populateChildren(entity);
+
+    const populateParents = async (
+      node: GeographicEntity,
+    ): Promise<GeographicEntity[]> => {
+      const parents: GeographicEntity[] = [];
+      let currentEntity = node;
+
+      while (currentEntity.parentId) {
+        const parent = await this.findParent(currentEntity.id!);
+        if (parent) {
+          parents.unshift(parent);
+          currentEntity = parent;
+        } else {
+          break;
+        }
+      }
+      return parents;
+    };
+    const parents = await populateParents(entity);
+
+    entity.parents = parents;
+    return entity;
   }
 }

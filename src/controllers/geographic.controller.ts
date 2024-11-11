@@ -14,6 +14,7 @@ import {
   requestBody,
   response,
 } from '@loopback/rest';
+import _ from 'lodash';
 import {GeographicEntity} from '../models';
 import {GeographicEntityRepository} from '../repositories';
 
@@ -43,11 +44,18 @@ export class GeographicController {
     })
     geographicEntity: Omit<GeographicEntity, 'id'>,
   ): Promise<any> {
-    const data = await this.geographicEntityRepository.create(geographicEntity);
+    const newGeoData =
+      geographicEntity.entityType === 'state'
+        ? _.omit(geographicEntity, ['parentId'])
+        : geographicEntity;
+
+    const createdData =
+      await this.geographicEntityRepository.create(newGeoData);
+
     return {
       statusCode: 201,
-      message: 'Geographic-Entities added successfully',
-      data: data,
+      message: 'Geographic entity added successfully',
+      data: createdData,
     };
   }
 

@@ -1,6 +1,5 @@
-import {belongsTo, Entity, hasOne, model, property} from '@loopback/repository';
+import {belongsTo, Entity, model, property} from '@loopback/repository';
 import {GeographicEntity} from './geographic-entity.model';
-import {UserCredential} from './user-credential.model';
 
 @model({settings: {strict: false}})
 export class User extends Entity {
@@ -77,10 +76,7 @@ export class User extends Entity {
   modified?: string;
 
   @belongsTo(() => GeographicEntity)
-  geographicId: string;
-
-  @hasOne(() => UserCredential)
-  userCredential: UserCredential;
+  villageId: string;
   // Define well-known properties here
 
   // Indexer property to allow additional data

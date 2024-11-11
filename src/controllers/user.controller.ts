@@ -1,11 +1,6 @@
 import {authenticate} from '@loopback/authentication';
 import {inject, service} from '@loopback/core';
-import {
-  AnyObject,
-  Filter,
-  FilterExcludingWhere,
-  repository,
-} from '@loopback/repository';
+import {AnyObject, Filter, repository} from '@loopback/repository';
 import {
   del,
   get,
@@ -20,7 +15,14 @@ import {
 import {SecurityBindings, securityId, UserProfile} from '@loopback/security';
 import {PasswordHasherBindings, TokenServiceBindings} from '../keys';
 import {User} from '../models';
-import {UserCodeRepository, UserRepository} from '../repositories';
+import {
+  FarmerRepository,
+  GeographicEntityRepository,
+  PitRepository,
+  UserCodeRepository,
+  UserRepository,
+  WellRepository,
+} from '../repositories';
 import {PasswordHasher} from '../services/hash.password.bcryptjs';
 import {TokenService} from '../services/jwt-service';
 import {MyUserService} from '../services/user-service';
@@ -44,6 +46,18 @@ export class UserController {
     public passwordHasher: PasswordHasher,
 
     @service(MyUserService) public userService: MyUserService,
+
+    @repository(PitRepository)
+    public pitRepository: PitRepository,
+
+    @repository(WellRepository)
+    public wellRepository: WellRepository,
+
+    @repository(FarmerRepository)
+    public farmerRepository: FarmerRepository,
+
+    @repository(GeographicEntityRepository)
+    public geographicEntityRepository: GeographicEntityRepository,
   ) {}
 
   @post('/users')
@@ -153,15 +167,25 @@ export class UserController {
       },
     },
   })
-  async findById(
-    @param.path.string('id') id: string,
-    @param.filter(User, {exclude: 'where'}) filter?: FilterExcludingWhere<User>,
-  ): Promise<AnyObject> {
-    const data = await this.userRepository.findById(id, filter);
+  async findById(@param.path.string('id') id: string): Promise<AnyObject> {
+    const userData = await this.userRepository.findById(id);
+
+    const checkFarmer = await this.farmerRepository.find({
+      where: {
+        villageId: userData.villageId,
+      },
+    });
+
+    const checkGeo = await this.geographicEntityRepository.fetchHierarchy(
+      userData.villageId,
+    );
+
+    console.log('checkGeo', checkGeo);
+
     return {
       statusCode: 200,
       message: 'User details',
-      data: data,
+      data: userData,
     };
   }
 

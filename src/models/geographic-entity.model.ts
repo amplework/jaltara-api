@@ -1,4 +1,10 @@
-import {Entity, model, property, hasMany} from '@loopback/repository';
+import {
+  belongsTo,
+  Entity,
+  hasMany,
+  model,
+  property,
+} from '@loopback/repository';
 import {Farmer} from './farmer.model';
 
 @model({settings: {strict: false}})
@@ -25,15 +31,14 @@ export class GeographicEntity extends Entity {
   })
   entityType: 'state' | 'district' | 'taluk' | 'village';
 
-  @property({
-    type: 'string',
-  })
+  @belongsTo(() => GeographicEntity, {name: 'parent'})
   parentId?: string;
+
+  @hasMany(() => GeographicEntity, {keyTo: 'parentId'})
+  children: GeographicEntity[];
 
   @hasMany(() => Farmer, {keyTo: 'villageId'})
   farmers: Farmer[];
-  // Indexer property to allow additional data
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [prop: string]: any;
 
   constructor(data?: Partial<GeographicEntity>) {
