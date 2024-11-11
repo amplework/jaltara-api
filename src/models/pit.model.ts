@@ -5,7 +5,6 @@ import {
   model,
   property,
 } from '@loopback/repository';
-import {HttpErrors} from '@loopback/rest';
 import {Farmer} from './farmer.model';
 import {Log} from './log.model';
 import {Stage} from './stage.model';
@@ -43,6 +42,14 @@ export class Pit extends Entity {
   plotSize: number;
 
   @property({
+    type: 'string',
+    jsonSchema: {
+      enum: ['marking', 'digging', 'filling', 'maintenance'],
+    },
+  })
+  stageName: string;
+
+  @property({
     type: 'number',
     required: true,
   })
@@ -76,27 +83,6 @@ export class Pit extends Entity {
 
   constructor(data?: Partial<Pit>) {
     super(data);
-    this.validateConditionalFields(data);
-  }
-
-  private validateConditionalFields(data?: Partial<Stage>) {
-    if (data?.stageName === 'digging' && !data?.equipmentId) {
-      throw new HttpErrors.UnprocessableEntity(
-        'equipmentId is required when stageName is "digging".',
-      );
-    }
-    if (data?.stageName === 'maintenance') {
-      if (!data?.maintenanceType) {
-        throw new HttpErrors.UnprocessableEntity(
-          'maintenanceType is required when stageName is "maintenance".',
-        );
-      }
-      if (!data?.briefMaintenance) {
-        throw new HttpErrors.UnprocessableEntity(
-          'briefMaintenance is required when stageName is "maintenance".',
-        );
-      }
-    }
   }
 }
 

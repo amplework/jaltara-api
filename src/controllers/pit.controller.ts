@@ -1,10 +1,6 @@
 import {authenticate} from '@loopback/authentication';
 import {inject} from '@loopback/core';
-import {
-  AnyObject,
-  FilterExcludingWhere,
-  repository,
-} from '@loopback/repository';
+import {AnyObject, repository} from '@loopback/repository';
 import {
   del,
   get,
@@ -69,13 +65,13 @@ export class PitController {
       throw new HttpErrors.NotFound(`Farmer ${pit.farmerId} does not exist`);
     }
 
-    const newPitData = _.omit(pit, ['stage', 'equipmentId']);
+    const newPitData = _.omit(pit, ['stage', 'equipmentId', 'stageName']);
     const createdPit = await this.pitRepository.create(newPitData);
 
     if (createdPit?.id) {
       const stageData = {
         pitId: createdPit.id,
-        stageName: pit.stage,
+        stageName: pit.stageName,
         photo: pit.photo,
         equipmentId: pit.equipmentId,
         updatedBy: userId,
@@ -102,12 +98,33 @@ export class PitController {
       },
     },
   })
-  async find(): Promise<any> {
+  async find(@param.query.string('villageId') villageId: string): Promise<any> {
     const data = await this.pitRepository.find({
+      where: {
+        farmer: {villageId: villageId},
+      },
       order: ['created DESC'],
+      fields: {
+        id: true,
+        pitId: true,
+        level: true,
+        farmerId: true,
+        equipmentId: true,
+      },
       include: [
         {
           relation: 'stages',
+          scope: {
+            fields: {
+              id: true,
+              pitId: true,
+              stageName: true,
+              created: true,
+              modified: true,
+              equipmentId: true,
+            },
+            order: ['created DESC'],
+          },
         },
         {
           relation: 'farmer',
@@ -116,11 +133,16 @@ export class PitController {
               id: true,
               name: true,
               photo: true,
+              villageId: true,
+            },
+            where: {
+              villageId: villageId,
             },
           },
         },
       ],
     });
+
     return {
       statusCode: 200,
       message: 'Pits List',
@@ -137,10 +159,7 @@ export class PitController {
       },
     },
   })
-  async findById(
-    @param.path.string('id') id: string,
-    @param.filter(Pit, {exclude: 'where'}) filter?: FilterExcludingWhere<Pit>,
-  ): Promise<AnyObject> {
+  async findById(@param.path.string('id') id: string): Promise<AnyObject> {
     const data = await this.pitRepository.findById(id, {
       include: [
         {relation: 'stages'},

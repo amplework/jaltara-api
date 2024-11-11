@@ -19,6 +19,9 @@ export class Stage extends Entity {
   @property({
     type: 'string',
     required: true,
+    jsonSchema: {
+      enum: ['marking', 'digging', 'filling', 'maintenance'],
+    },
   })
   stageName: string;
 
@@ -49,6 +52,18 @@ export class Stage extends Entity {
     required: false,
   })
   updatedBy?: string;
+
+  @property({
+    type: 'date',
+    default: () => new Date(),
+  })
+  created?: string;
+
+  @property({
+    type: 'date',
+    default: () => new Date(),
+  })
+  modified?: string;
 
   // Define well-known properties here
 
