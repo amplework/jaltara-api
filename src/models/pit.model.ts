@@ -8,6 +8,7 @@ import {
 import {Farmer} from './farmer.model';
 import {Log} from './log.model';
 import {Stage} from './stage.model';
+import {GeographicEntity} from './geographic-entity.model';
 
 @model({settings: {strict: false}})
 export class Pit extends Entity {
@@ -75,6 +76,9 @@ export class Pit extends Entity {
 
   @hasMany(() => Log)
   logs: Log[];
+
+  @belongsTo(() => GeographicEntity)
+  villageId: string;
   // Define well-known properties here
 
   // Indexer property to allow additional data

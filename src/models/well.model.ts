@@ -1,5 +1,6 @@
-import {Entity, hasMany, model, property} from '@loopback/repository';
+import {Entity, hasMany, model, property, belongsTo} from '@loopback/repository';
 import {Log} from './log.model';
+import {GeographicEntity} from './geographic-entity.model';
 
 @model({settings: {strict: false}})
 export class Well extends Entity {
@@ -9,12 +10,6 @@ export class Well extends Entity {
     generated: true,
   })
   id?: string;
-
-  @property({
-    type: 'string',
-  })
-  villageId: string;
-
   @property({
     type: 'string',
   })
@@ -39,6 +34,9 @@ export class Well extends Entity {
 
   @hasMany(() => Log)
   logs: Log[];
+
+  @belongsTo(() => GeographicEntity)
+  villageId: string;
   // Define well-known properties here
 
   // Indexer property to allow additional data

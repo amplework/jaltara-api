@@ -1,6 +1,6 @@
 import {authenticate} from '@loopback/authentication';
 import {inject, service} from '@loopback/core';
-import {AnyObject, Filter, repository} from '@loopback/repository';
+import {AnyObject, repository} from '@loopback/repository';
 import {
   del,
   get,
@@ -129,11 +129,58 @@ export class UserController {
     currentUserProfile: UserProfile,
   ): Promise<any> {
     const userId = currentUserProfile[securityId];
-    const user = await this.userRepository.findById(userId);
+    const userData = await this.userRepository.findById(userId);
+
+    const checkGeo = await this.geographicEntityRepository.fetchHierarchy(
+      userData.villageId,
+    );
+
+    const countInGeo = async (
+      geoNode: any,
+    ): Promise<{farmerCount: number; wellCount: number; pitCount: number}> => {
+      const farmerCountResult = await this.farmerRepository.count({
+        villageId: geoNode.id,
+      });
+
+      const pitCountResult = await this.pitRepository.count({
+        villageId: geoNode.id,
+      });
+
+      const wellCountResult = await this.wellRepository.count({
+        villageId: geoNode.id,
+      });
+
+      const childrenCounts = await Promise.all(
+        (geoNode.children || []).map(async (childNode: any) => {
+          return await countInGeo(childNode);
+        }),
+      );
+
+      const totalFarmerCount =
+        farmerCountResult.count +
+        childrenCounts.reduce((sum, count) => sum + count.farmerCount, 0);
+      const totalPitCount =
+        pitCountResult.count +
+        childrenCounts.reduce((sum, count) => sum + count.pitCount, 0);
+      const totalWellCount =
+        wellCountResult.count +
+        childrenCounts.reduce((sum, count) => sum + count.wellCount, 0);
+
+      return {
+        farmerCount: totalFarmerCount,
+        pitCount: totalPitCount,
+        wellCount: totalWellCount,
+      };
+    };
+
+    const totalCounts = await countInGeo(checkGeo);
     return {
       statusCode: 200,
       message: 'User profile',
-      data: user,
+      data: userData,
+      farmerCount: totalCounts.farmerCount,
+      pitCount: totalCounts.pitCount,
+      wellCount: totalCounts.wellCount,
     };
   }
 
@@ -149,11 +196,29 @@ export class UserController {
       },
     },
   })
-  async find(@param.filter(User) filter?: Filter<User>): Promise<any> {
-    const data = await this.userRepository.find(filter);
+  async find(
+    @param.query.string('villageId') villageId: string,
+    @param.query.string('name') name: string,
+  ): Promise<any> {
+    const data = await this.userRepository.find({
+      order: ['created DESC'],
+      where: {
+        name: name,
+      },
+      include: [
+        {
+          relation: 'village',
+          scope: {
+            where: {
+              villageId: villageId,
+            },
+          },
+        },
+      ],
+    });
     return {
       statusCode: 200,
-      message: 'User details',
+      message: 'User list',
       data: data,
     };
   }
@@ -170,22 +235,56 @@ export class UserController {
   async findById(@param.path.string('id') id: string): Promise<AnyObject> {
     const userData = await this.userRepository.findById(id);
 
-    const checkFarmer = await this.farmerRepository.find({
-      where: {
-        villageId: userData.villageId,
-      },
-    });
-
     const checkGeo = await this.geographicEntityRepository.fetchHierarchy(
       userData.villageId,
     );
 
-    console.log('checkGeo', checkGeo);
+    const countInGeo = async (
+      geoNode: any,
+    ): Promise<{farmerCount: number; wellCount: number; pitCount: number}> => {
+      const farmerCountResult = await this.farmerRepository.count({
+        villageId: geoNode.id,
+      });
 
+      const pitCountResult = await this.pitRepository.count({
+        villageId: geoNode.id,
+      });
+
+      const wellCountResult = await this.wellRepository.count({
+        villageId: geoNode.id,
+      });
+
+      const childrenCounts = await Promise.all(
+        (geoNode.children || []).map(async (childNode: any) => {
+          return await countInGeo(childNode);
+        }),
+      );
+
+      const totalFarmerCount =
+        farmerCountResult.count +
+        childrenCounts.reduce((sum, count) => sum + count.farmerCount, 0);
+      const totalPitCount =
+        pitCountResult.count +
+        childrenCounts.reduce((sum, count) => sum + count.pitCount, 0);
+      const totalWellCount =
+        wellCountResult.count +
+        childrenCounts.reduce((sum, count) => sum + count.wellCount, 0);
+
+      return {
+        farmerCount: totalFarmerCount,
+        pitCount: totalPitCount,
+        wellCount: totalWellCount,
+      };
+    };
+
+    const totalCounts = await countInGeo(checkGeo);
     return {
       statusCode: 200,
       message: 'User details',
       data: userData,
+      farmerCount: totalCounts.farmerCount,
+      pitCount: totalCounts.pitCount,
+      wellCount: totalCounts.wellCount,
     };
   }
 

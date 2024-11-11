@@ -6,10 +6,11 @@ import {
   repository,
 } from '@loopback/repository';
 import {DbDataSource} from '../datasources';
-import {Farmer, Log, Pit, PitRelations, Stage} from '../models';
+import {Farmer, Log, Pit, PitRelations, Stage, GeographicEntity} from '../models';
 import {FarmerRepository} from './farmer.repository';
 import {LogRepository} from './log.repository';
 import {StageRepository} from './stage.repository';
+import {GeographicEntityRepository} from './geographic-entity.repository';
 
 export class PitRepository extends DefaultCrudRepository<
   Pit,
@@ -25,6 +26,8 @@ export class PitRepository extends DefaultCrudRepository<
 
   public readonly logs: HasManyRepositoryFactory<Log, typeof Pit.prototype.id>;
 
+  public readonly village: BelongsToAccessor<GeographicEntity, typeof Pit.prototype.id>;
+
   constructor(
     @inject('datasources.db') dataSource: DbDataSource,
     @repository.getter('FarmerRepository')
@@ -32,9 +35,11 @@ export class PitRepository extends DefaultCrudRepository<
     @repository.getter('StageRepository')
     protected stageRepositoryGetter: Getter<StageRepository>,
     @repository.getter('LogRepository')
-    protected logRepositoryGetter: Getter<LogRepository>,
+    protected logRepositoryGetter: Getter<LogRepository>, @repository.getter('GeographicEntityRepository') protected geographicEntityRepositoryGetter: Getter<GeographicEntityRepository>,
   ) {
     super(Pit, dataSource);
+    this.village = this.createBelongsToAccessorFor('village', geographicEntityRepositoryGetter,);
+    this.registerInclusionResolver('village', this.village.inclusionResolver);
     this.logs = this.createHasManyRepositoryFactoryFor(
       'logs',
       logRepositoryGetter,

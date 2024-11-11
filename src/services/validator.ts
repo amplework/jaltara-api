@@ -3,7 +3,6 @@ import {HttpErrors} from '@loopback/rest';
 import {Credentials} from '../utils/type-schema';
 
 export function validateCredentials(credentials: Credentials) {
-  console.log('credentials ----->', credentials);
   if (!credentials.password || credentials.password.length < 6) {
     throw new HttpErrors.UnprocessableEntity(
       'password must be minimum 6 characters',

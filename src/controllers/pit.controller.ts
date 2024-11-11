@@ -60,10 +60,12 @@ export class PitController {
       throw new HttpErrors.UnprocessableEntity('farmerId is missing');
     }
 
-    const farmerExists = await this.farmerRepository.exists(pit.farmerId);
-    if (!farmerExists) {
+    const farmerData = await this.farmerRepository.findById(pit.farmerId);
+    if (!farmerData) {
       throw new HttpErrors.NotFound(`Farmer ${pit.farmerId} does not exist`);
     }
+
+    pit.villageId = farmerData.villageId;
 
     const newPitData = _.omit(pit, ['stage', 'equipmentId', 'stageName']);
     const createdPit = await this.pitRepository.create(newPitData);

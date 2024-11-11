@@ -8,6 +8,7 @@ import {
   del,
   get,
   getModelSchemaRef,
+  HttpErrors,
   param,
   patch,
   post,
@@ -15,12 +16,15 @@ import {
   response,
 } from '@loopback/rest';
 import {Well} from '../models';
-import {WellRepository} from '../repositories';
+import {GeographicEntityRepository, WellRepository} from '../repositories';
 
 export class WellController {
   constructor(
     @repository(WellRepository)
     public wellRepository: WellRepository,
+
+    @repository(GeographicEntityRepository)
+    public geographicEntityRepository: GeographicEntityRepository,
   ) {}
 
   @post('/wells')
@@ -41,6 +45,17 @@ export class WellController {
     })
     well: Omit<Well, 'id'>,
   ): Promise<AnyObject> {
+    if (!well.villageId) {
+      throw new HttpErrors.UnprocessableEntity('villageId is missing');
+    }
+
+    const villageData = await this.geographicEntityRepository.findById(
+      well.villageId,
+    );
+    if (!villageData) {
+      throw new HttpErrors.NotFound(`Village ${well.villageId} does not exist`);
+    }
+
     const data = await this.wellRepository.create(well);
     return {
       statusCode: 201,

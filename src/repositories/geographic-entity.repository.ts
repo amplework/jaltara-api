@@ -42,7 +42,7 @@ export class GeographicEntityRepository extends DefaultCrudRepository<
 
   async fetchHierarchy(id: string): Promise<GeographicEntity | null> {
     const entity = await this.findById(id, {
-      include: [{relation: 'farmers'}],
+      // include: [{relation: 'farmers'}],
     });
 
     if (!entity) return null;
@@ -58,26 +58,26 @@ export class GeographicEntityRepository extends DefaultCrudRepository<
 
     await populateChildren(entity);
 
-    const populateParents = async (
-      node: GeographicEntity,
-    ): Promise<GeographicEntity[]> => {
-      const parents: GeographicEntity[] = [];
-      let currentEntity = node;
+    // const populateParents = async (
+    //   node: GeographicEntity,
+    // ): Promise<GeographicEntity[]> => {
+    //   const parents: GeographicEntity[] = [];
+    //   let currentEntity = node;
 
-      while (currentEntity.parentId) {
-        const parent = await this.findParent(currentEntity.id!);
-        if (parent) {
-          parents.unshift(parent);
-          currentEntity = parent;
-        } else {
-          break;
-        }
-      }
-      return parents;
-    };
-    const parents = await populateParents(entity);
+    //   while (currentEntity.parentId) {
+    //     const parent = await this.findParent(currentEntity.id!);
+    //     if (parent) {
+    //       parents.unshift(parent);
+    //       currentEntity = parent;
+    //     } else {
+    //       break;
+    //     }
+    //   }
+    //   return parents;
+    // };
+    // const parents = await populateParents(entity);
 
-    entity.parents = parents;
+    // entity.parents = parents;
     return entity;
   }
 }
