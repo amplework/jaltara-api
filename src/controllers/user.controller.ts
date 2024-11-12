@@ -197,7 +197,7 @@ export class UserController {
     },
   })
   async find(
-    @param.query.string('villageId') villageId: string,
+    @param.query.string('villageName') villageName: string,
     @param.query.string('name') name: string,
   ): Promise<any> {
     const data = await this.userRepository.find({
@@ -210,16 +210,20 @@ export class UserController {
           relation: 'village',
           scope: {
             where: {
-              villageId: villageId,
+              name: villageName,
+              id: {neq: null},
             },
           },
         },
       ],
     });
+
+    const filteredData = data.filter(user => user.village);
+
     return {
       statusCode: 200,
       message: 'User list',
-      data: data,
+      data: filteredData,
     };
   }
 
