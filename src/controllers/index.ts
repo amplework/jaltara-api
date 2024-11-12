@@ -1,3 +1,4 @@
+export * from './admin.controller';
 export * from './crop.controller';
 export * from './equipment.controller';
 export * from './farmer.controller';

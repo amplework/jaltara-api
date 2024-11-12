@@ -41,9 +41,7 @@ export class GeographicEntityRepository extends DefaultCrudRepository<
   }
 
   async fetchHierarchy(id: string): Promise<GeographicEntity | null> {
-    const entity = await this.findById(id, {
-      // include: [{relation: 'farmers'}],
-    });
+    const entity = await this.findById(id);
 
     if (!entity) return null;
     const populateChildren = async (node: GeographicEntity) => {

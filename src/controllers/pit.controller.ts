@@ -111,6 +111,7 @@ export class PitController {
         pitId: true,
         level: true,
         farmerId: true,
+        villageId: true,
         equipmentId: true,
       },
       include: [
@@ -165,6 +166,7 @@ export class PitController {
     const data = await this.pitRepository.findById(id, {
       include: [
         {relation: 'stages'},
+        {relation: 'village'},
         {
           relation: 'farmer',
           scope: {
