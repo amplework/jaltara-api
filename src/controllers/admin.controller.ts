@@ -274,6 +274,11 @@ export class AdminController {
       where: {
         name: name,
       },
+      fields: {
+        id: true,
+        name: true,
+        villageId: true,
+      },
       include: [
         {
           relation: 'village',
@@ -298,61 +303,23 @@ export class AdminController {
         geoNode: any,
       ): Promise<{
         pitCount: number;
-        pits: Array<{id: string; stages: Array<{stageName: string}>}>;
       }> => {
-        const pits = await this.pitRepository.find({
-          where: {
-            villageId: geoNode.id,
-          },
-          order: ['created DESC'],
-          fields: {
-            id: true,
-            pitId: true,
-            level: true,
-            farmerId: true,
-            villageId: true,
-            equipmentId: true,
-          },
-          include: [
-            {
-              relation: 'stages',
-              scope: {
-                fields: {
-                  id: true,
-                  pitId: true,
-                  stageName: true,
-                  equipmentId: true,
-                },
-                order: ['created DESC'],
-              },
-            },
-          ],
+        const pitCountInCurrentNode = await this.pitRepository.count({
+          villageId: geoNode.id,
         });
 
-        const pitDetails = pits.map(pit => ({
-          id: pit.id,
-          stages: (pit.stages || []).map(stage => ({
-            stageName: stage.stageName,
-          })),
-        }));
-
-        const childrenResults = await Promise.all(
+        const childrenCounts = await Promise.all(
           (geoNode.children || []).map(async (childNode: any) => {
             return await countInGeo(childNode);
           }),
         );
 
         const totalPitCount =
-          pitDetails.length +
-          childrenResults.reduce((sum, result) => sum + result.pitCount, 0);
-        const allPits = [
-          ...pitDetails,
-          ...childrenResults.flatMap(result => result.pits),
-        ];
+          pitCountInCurrentNode.count +
+          childrenCounts.reduce((sum, result) => sum + result.pitCount, 0);
 
         return {
           pitCount: totalPitCount,
-          pits: allPits,
         };
       };
 
@@ -361,13 +328,12 @@ export class AdminController {
       userDetails.push({
         userData,
         pitCount: totalCounts.pitCount,
-        pitDetails: totalCounts.pits,
       });
     }
-    const totalDugPit = await this.stageRepository.count({
+    const totalDugPit = await this.pitRepository.count({
       stageName: 'digging',
     });
-    const totalCompletePit = await this.stageRepository.count({
+    const totalCompletePit = await this.pitRepository.count({
       stageName: 'filling',
     });
 

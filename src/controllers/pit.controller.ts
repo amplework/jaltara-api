@@ -17,8 +17,10 @@ import _ from 'lodash';
 import {Pit} from '../models';
 import {
   FarmerRepository,
+  GeographicEntityRepository,
   PitRepository,
   StageRepository,
+  UserRepository,
 } from '../repositories';
 
 export class PitController {
@@ -31,6 +33,12 @@ export class PitController {
 
     @repository(FarmerRepository)
     public farmerRepository: FarmerRepository,
+
+    @repository(UserRepository)
+    public userRepository: UserRepository,
+
+    @repository(GeographicEntityRepository)
+    public geographicEntityRepository: GeographicEntityRepository,
   ) {}
 
   @post('/pits')
@@ -67,16 +75,16 @@ export class PitController {
 
     pit.villageId = farmerData.villageId;
 
-    const newPitData = _.omit(pit, ['stage', 'equipmentId', 'stageName']);
+    const newPitData = _.omit(pit, ['equipmentId']);
     const createdPit = await this.pitRepository.create(newPitData);
 
-    if (createdPit?.id) {
+    if (createdPit.id) {
       const stageData = {
         pitId: createdPit.id,
         stageName: pit.stageName,
         photo: pit.photo,
-        equipmentId: pit.equipmentId,
         updatedBy: userId,
+        ...(pit.stageName !== 'marking' && {equipmentId: pit.equipmentId}),
       };
       await this.stageRepository.create(stageData);
     }
@@ -127,6 +135,7 @@ export class PitController {
               equipmentId: true,
             },
             order: ['created DESC'],
+            limit: 1,
           },
         },
         {

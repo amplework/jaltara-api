@@ -29,8 +29,10 @@ export class StageController {
   constructor(
     @repository(StageRepository)
     public stageRepository: StageRepository,
+
     @repository(PitRepository)
     public pitRepository: PitRepository,
+
     @repository(FarmerRepository)
     public farmerRepository: FarmerRepository,
   ) {}
@@ -84,6 +86,11 @@ export class StageController {
     }
     stage.updatedBy = userId;
     const data = await this.stageRepository.create(stage);
+
+    await this.pitRepository.updateById(pitCheck.id, {
+      stageName: stage.stageName,
+    });
+
     return {
       statusCode: 201,
       message: 'Stage added successfully',

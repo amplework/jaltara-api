@@ -1,9 +1,4 @@
-import {
-  AnyObject,
-  Filter,
-  FilterExcludingWhere,
-  repository,
-} from '@loopback/repository';
+import {AnyObject, Filter, repository} from '@loopback/repository';
 import {
   del,
   get,
@@ -143,11 +138,33 @@ export class LogController {
       },
     },
   })
-  async findById(
-    @param.path.string('id') id: string,
-    @param.filter(Log, {exclude: 'where'}) filter?: FilterExcludingWhere<Log>,
-  ): Promise<AnyObject> {
-    const data = await this.logRepository.findById(id, filter);
+  async findById(@param.path.string('id') id: string): Promise<AnyObject> {
+    const data = await this.logRepository.findById(id, {
+      include: [
+        {
+          relation: 'pit',
+          scope: {
+            fields: {
+              id: true,
+              pitId: true,
+              farmerId: true,
+            },
+            include: [
+              {
+                relation: 'farmer',
+                scope: {
+                  fields: {
+                    id: true,
+                    name: true,
+                    photo: true,
+                  },
+                },
+              },
+            ],
+          },
+        },
+      ],
+    });
     return {
       statusCode: 200,
       message: "Log's details",

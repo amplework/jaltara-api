@@ -1,6 +1,5 @@
 import {
   AnyObject,
-  Filter,
   FilterExcludingWhere,
   repository,
 } from '@loopback/repository';
@@ -61,8 +60,13 @@ export class CropController {
       },
     },
   })
-  async find(@param.filter(Crop) filter?: Filter<Crop>): Promise<any> {
-    const data = await this.cropRepository.find(filter);
+  async find(@param.query.string('name') name: string): Promise<any> {
+    const data = await this.cropRepository.find({
+      order: ['created DESC'],
+      where: {
+        name: name,
+      },
+    });
     return {
       statusCode: 200,
       message: 'Crop List',
