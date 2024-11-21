@@ -78,4 +78,32 @@ export class GeographicEntityRepository extends DefaultCrudRepository<
     // entity.parents = parents;
     return entity;
   }
+
+  async fetchUpperHierarchy(id: string): Promise<GeographicEntity | null> {
+    const entity = await this.findById(id);
+
+    if (!entity) return null;
+
+    const populateParents = async (
+      node: GeographicEntity,
+    ): Promise<GeographicEntity[]> => {
+      const parents: GeographicEntity[] = [];
+      let currentEntity = node;
+
+      while (currentEntity.parentId) {
+        const parent = await this.findParent(currentEntity.id!);
+        if (parent) {
+          parents.unshift(parent);
+          currentEntity = parent;
+        } else {
+          break;
+        }
+      }
+      return parents;
+    };
+    const parents = await populateParents(entity);
+
+    entity.parents = parents;
+    return entity;
+  }
 }

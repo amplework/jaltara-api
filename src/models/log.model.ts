@@ -2,6 +2,7 @@ import {belongsTo, Entity, model, property} from '@loopback/repository';
 import {Equipment} from './equipment.model';
 import {Pit} from './pit.model';
 import {Well} from './well.model';
+import {User} from './user.model';
 
 @model({settings: {strict: false}})
 export class Log extends Entity {
@@ -74,6 +75,9 @@ export class Log extends Entity {
 
   @belongsTo(() => Well)
   wellId: string;
+
+  @belongsTo(() => User, {name: 'updatedBySevek'})
+  updatedBy: string;
   // Define well-known properties here
 
   // Indexer property to allow additional data

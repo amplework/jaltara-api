@@ -1,6 +1,13 @@
-import {Entity, hasMany, model, property, belongsTo} from '@loopback/repository';
-import {Log} from './log.model';
+import {
+  belongsTo,
+  Entity,
+  hasMany,
+  model,
+  property,
+} from '@loopback/repository';
 import {GeographicEntity} from './geographic-entity.model';
+import {Log} from './log.model';
+import {Stage} from './stage.model';
 
 @model({settings: {strict: false}})
 export class Well extends Entity {
@@ -37,6 +44,9 @@ export class Well extends Entity {
 
   @belongsTo(() => GeographicEntity)
   villageId: string;
+
+  @hasMany(() => Stage)
+  stages: Stage[];
   // Define well-known properties here
 
   // Indexer property to allow additional data

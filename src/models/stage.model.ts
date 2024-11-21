@@ -1,5 +1,6 @@
-import {Entity, model, property} from '@loopback/repository';
+import {Entity, model, property, belongsTo} from '@loopback/repository';
 import {HttpErrors} from '@loopback/rest';
+import {User} from './user.model';
 
 @model({settings: {strict: false}})
 export class Stage extends Entity {
@@ -12,9 +13,15 @@ export class Stage extends Entity {
 
   @property({
     type: 'string',
-    required: true,
+    required: false,
   })
   pitId: string;
+
+  @property({
+    type: 'string',
+    required: false,
+  })
+  wellId: string;
 
   @property({
     type: 'string',
@@ -46,13 +53,6 @@ export class Stage extends Entity {
     type: 'string',
   })
   briefMaintenance?: string;
-
-  @property({
-    type: 'string',
-    required: false,
-  })
-  updatedBy?: string;
-
   @property({
     type: 'date',
     default: () => new Date(),
@@ -65,6 +65,8 @@ export class Stage extends Entity {
   })
   modified?: string;
 
+  @belongsTo(() => User, {name: 'updatedbySevek'})
+  updatedBy: string;
   // Define well-known properties here
 
   // Indexer property to allow additional data

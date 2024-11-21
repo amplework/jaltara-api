@@ -172,6 +172,11 @@ export class AdminController {
       userData.villageId,
     );
 
+    const checkUpperGeo =
+      await this.geographicEntityRepository.fetchUpperHierarchy(
+        userData.villageId,
+      );
+
     const countInGeo = async (
       geoNode: any,
     ): Promise<{farmerCount: number; wellCount: number; pitCount: number}> => {
@@ -214,7 +219,10 @@ export class AdminController {
     return {
       statusCode: 200,
       message: 'User details',
-      data: userData,
+      data: {
+        ...userData,
+        checkUpperGeo: checkUpperGeo,
+      },
       farmerCount: totalCounts.farmerCount,
       pitCount: totalCounts.pitCount,
       wellCount: totalCounts.wellCount,

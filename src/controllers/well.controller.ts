@@ -1,6 +1,7 @@
+import {authenticate} from '@loopback/authentication';
+import {inject} from '@loopback/core';
 import {
   AnyObject,
-  Filter,
   FilterExcludingWhere,
   repository,
 } from '@loopback/repository';
@@ -15,8 +16,14 @@ import {
   requestBody,
   response,
 } from '@loopback/rest';
+import {SecurityBindings, securityId, UserProfile} from '@loopback/security';
+import _ from 'lodash';
 import {Well} from '../models';
-import {GeographicEntityRepository, WellRepository} from '../repositories';
+import {
+  GeographicEntityRepository,
+  StageRepository,
+  WellRepository,
+} from '../repositories';
 
 export class WellController {
   constructor(
@@ -25,6 +32,9 @@ export class WellController {
 
     @repository(GeographicEntityRepository)
     public geographicEntityRepository: GeographicEntityRepository,
+
+    @repository(StageRepository)
+    public stageRepository: StageRepository,
   ) {}
 
   @post('/wells')
@@ -32,6 +42,7 @@ export class WellController {
     description: 'Well model instance',
     content: {'application/json': {schema: getModelSchemaRef(Well)}},
   })
+  @authenticate('jwt')
   async create(
     @requestBody({
       content: {
@@ -44,7 +55,9 @@ export class WellController {
       },
     })
     well: Omit<Well, 'id'>,
-  ): Promise<AnyObject> {
+    @inject(SecurityBindings.USER)
+    currentUserProfile: UserProfile,
+  ): Promise<any> {
     if (!well.villageId) {
       throw new HttpErrors.UnprocessableEntity('villageId is missing');
     }
@@ -56,11 +69,29 @@ export class WellController {
       throw new HttpErrors.NotFound(`Village ${well.villageId} does not exist`);
     }
 
-    const data = await this.wellRepository.create(well);
+    const userId = currentUserProfile[securityId];
+
+    well.villageId = villageData.id;
+
+    const newWellData = _.omit(well, ['equipmentId']);
+    const createdWell = await this.wellRepository.create(newWellData);
+
+    if (createdWell.id) {
+      const stageData = {
+        wellId: createdWell.id,
+        stageName: 'maintenance',
+        maintenanceType: 'mini maintenance',
+        briefMaintenance: 'well maintenance',
+        photo: well.photo,
+        updatedBy: userId,
+        equipmentId: well.equipmentId,
+      };
+      await this.stageRepository.create(stageData);
+    }
     return {
       statusCode: 201,
       message: 'Well added successfully',
-      data: data,
+      data: createdWell,
     };
   }
 
@@ -76,12 +107,59 @@ export class WellController {
       },
     },
   })
-  async find(@param.filter(Well) filter?: Filter<Well>): Promise<any> {
+  async find(
+    @param.query.string('villageName') villageName: string,
+    @param.query.string('sevakName') sevakName: string,
+  ): Promise<any> {
+    const filter: any = {
+      include: [
+        {
+          relation: 'village',
+          scope: {
+            fields: {
+              id: true,
+              name: true,
+            },
+            where: villageName ? {name: villageName} : undefined,
+          },
+        },
+        {
+          relation: 'stages',
+          scope: {
+            fields: {
+              id: true,
+              wellId: true,
+              created: true,
+              updatedBy: true,
+            },
+            order: ['created DESC'],
+            include: [
+              {
+                relation: 'updatedbySevek',
+                scope: {
+                  fields: {
+                    id: true,
+                    name: true,
+                  },
+                  where: sevakName ? {name: sevakName} : undefined,
+                },
+              },
+            ],
+          },
+        },
+      ],
+    };
     const data = await this.wellRepository.find(filter);
+    const filteredData = data.filter(
+      (item: any) =>
+        item.village &&
+        item.stages &&
+        item.stages.some((stage: any) => stage.updatedbySevek),
+    );
     return {
       statusCode: 200,
       message: "Well's List",
-      data: data,
+      data: filteredData,
     };
   }
 
