@@ -1,5 +1,6 @@
-import {Entity, hasMany, model, property} from '@loopback/repository';
+import {Entity, hasMany, model, property, belongsTo} from '@loopback/repository';
 import {Pit} from './pit.model';
+import {GeographicEntity} from './geographic-entity.model';
 
 @model({settings: {strict: false}})
 export class Farmer extends Entity {
@@ -72,10 +73,8 @@ export class Farmer extends Entity {
   @hasMany(() => Pit)
   pits: Pit[];
 
-  @property({
-    type: 'string',
-  })
-  villageId?: string;
+  @belongsTo(() => GeographicEntity)
+  villageId: string;
   // Define well-known properties here
 
   // Indexer property to allow additional data

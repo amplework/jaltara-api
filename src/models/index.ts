@@ -9,3 +9,4 @@ export * from './user-code.model';
 export * from './user-credential.model';
 export * from './user.model';
 export * from './well.model';
+export * from './farmers-challenge.model';

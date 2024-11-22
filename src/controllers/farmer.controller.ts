@@ -1,5 +1,3 @@
-import {authenticate} from '@loopback/authentication';
-import {inject} from '@loopback/core';
 import {
   AnyObject,
   FilterExcludingWhere,
@@ -16,7 +14,6 @@ import {
   requestBody,
   response,
 } from '@loopback/rest';
-import {SecurityBindings, UserProfile} from '@loopback/security';
 import {Farmer} from '../models';
 import {FarmerRepository, GeographicEntityRepository} from '../repositories';
 
@@ -76,23 +73,49 @@ export class FarmerController {
       },
     },
   })
-  @authenticate('jwt')
   async find(
-    @inject(SecurityBindings.USER)
-    currentUserProfile: UserProfile,
-    @param.query.string('villageId') villageId: string,
+    @param.query.string('name') name?: string,
+    @param.query.string('villageName') villageName?: string,
   ): Promise<any> {
-    let where: any = {
-      villageId: villageId,
-    };
     const data = await this.farmerRepository.find({
+      where: {
+        name: name,
+      },
       order: ['created DESC'],
-      where: where,
+      include: [
+        {
+          relation: 'pits',
+          scope: {
+            fields: {
+              id: true,
+              farmerId: true,
+            },
+          },
+        },
+        {
+          relation: 'village',
+          scope: {
+            fields: {
+              id: true,
+              name: true,
+            },
+            where: {
+              name: villageName,
+            },
+          },
+        },
+      ],
     });
+
+    const enrichedData = data.map(farmer => ({
+      ...farmer,
+      totalPits: farmer.pits?.length || 0,
+    }));
+
     return {
       statusCode: 200,
       message: "Farmer's list",
-      data: data,
+      data: enrichedData,
     };
   }
 
