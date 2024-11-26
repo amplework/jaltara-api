@@ -13,7 +13,7 @@ import {
 } from '@loopback/rest';
 import {SecurityBindings, UserProfile} from '@loopback/security';
 import {PasswordHasherBindings, TokenServiceBindings} from '../keys';
-import {Pit, User} from '../models';
+import {User} from '../models';
 import {
   FarmerRepository,
   GeographicEntityRepository,
@@ -261,96 +261,96 @@ export class AdminController {
     };
   }
 
-  @get('/sevak-pits')
-  @response(200, {
-    description: 'Array of Pit model instances',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'array',
-          items: getModelSchemaRef(Pit, {includeRelations: true}),
-        },
-      },
-    },
-  })
-  async findPit(
-    @param.query.string('villageName') villageName: string,
-    @param.query.string('name') name: string,
-  ): Promise<any> {
-    const data = await this.userRepository.find({
-      order: ['created DESC'],
-      where: {
-        name: name,
-      },
-      fields: {
-        id: true,
-        name: true,
-        villageId: true,
-      },
-      include: [
-        {
-          relation: 'village',
-          scope: {
-            where: {
-              name: villageName,
-              id: {neq: null},
-            },
-          },
-        },
-      ],
-    });
+  // @get('/sevak-pits')
+  // @response(200, {
+  //   description: 'Array of Pit model instances',
+  //   content: {
+  //     'application/json': {
+  //       schema: {
+  //         type: 'array',
+  //         items: getModelSchemaRef(Pit, {includeRelations: true}),
+  //       },
+  //     },
+  //   },
+  // })
+  // async findPit(
+  //   @param.query.string('villageName') villageName: string,
+  //   @param.query.string('name') name: string,
+  // ): Promise<any> {
+  //   const data = await this.userRepository.find({
+  //     order: ['created DESC'],
+  //     where: {
+  //       name: name,
+  //     },
+  //     fields: {
+  //       id: true,
+  //       name: true,
+  //       villageId: true,
+  //     },
+  //     include: [
+  //       {
+  //         relation: 'village',
+  //         scope: {
+  //           where: {
+  //             name: villageName,
+  //             id: {neq: null},
+  //           },
+  //         },
+  //       },
+  //     ],
+  //   });
 
-    const userDetails = [];
+  //   const userDetails = [];
 
-    for (const userData of data) {
-      const checkGeo = await this.geographicEntityRepository.fetchHierarchy(
-        userData.villageId,
-      );
+  //   for (const userData of data) {
+  //     const checkGeo = await this.geographicEntityRepository.fetchHierarchy(
+  //       userData.villageId,
+  //     );
 
-      const countInGeo = async (
-        geoNode: any,
-      ): Promise<{
-        pitCount: number;
-      }> => {
-        const pitCountInCurrentNode = await this.pitRepository.count({
-          villageId: geoNode.id,
-        });
+  //     const countInGeo = async (
+  //       geoNode: any,
+  //     ): Promise<{
+  //       pitCount: number;
+  //     }> => {
+  //       const pitCountInCurrentNode = await this.pitRepository.count({
+  //         villageId: geoNode.id,
+  //       });
 
-        const childrenCounts = await Promise.all(
-          (geoNode.children || []).map(async (childNode: any) => {
-            return await countInGeo(childNode);
-          }),
-        );
+  //       const childrenCounts = await Promise.all(
+  //         (geoNode.children || []).map(async (childNode: any) => {
+  //           return await countInGeo(childNode);
+  //         }),
+  //       );
 
-        const totalPitCount =
-          pitCountInCurrentNode.count +
-          childrenCounts.reduce((sum, result) => sum + result.pitCount, 0);
+  //       const totalPitCount =
+  //         pitCountInCurrentNode.count +
+  //         childrenCounts.reduce((sum, result) => sum + result.pitCount, 0);
 
-        return {
-          pitCount: totalPitCount,
-        };
-      };
+  //       return {
+  //         pitCount: totalPitCount,
+  //       };
+  //     };
 
-      const totalCounts = await countInGeo(checkGeo);
+  //     const totalCounts = await countInGeo(checkGeo);
 
-      userDetails.push({
-        userData,
-        pitCount: totalCounts.pitCount,
-      });
-    }
-    const totalDugPit = await this.pitRepository.count({
-      stageName: 'digging',
-    });
-    const totalCompletePit = await this.pitRepository.count({
-      stageName: 'filling',
-    });
+  //     userDetails.push({
+  //       userData,
+  //       pitCount: totalCounts.pitCount,
+  //     });
+  //   }
+  //   const totalDugPit = await this.pitRepository.count({
+  //     stageName: 'digging',
+  //   });
+  //   const totalCompletePit = await this.pitRepository.count({
+  //     stageName: 'filling',
+  //   });
 
-    return {
-      statusCode: 200,
-      message: 'User details with pit counts and stages',
-      totalDugPit: totalDugPit.count,
-      totalCompletePit: totalCompletePit.count,
-      data: userDetails,
-    };
-  }
+  //   return {
+  //     statusCode: 200,
+  //     message: 'User details with pit counts and stages',
+  //     totalDugPit: totalDugPit.count,
+  //     totalCompletePit: totalCompletePit.count,
+  //     data: userDetails,
+  //   };
+  // }
 }

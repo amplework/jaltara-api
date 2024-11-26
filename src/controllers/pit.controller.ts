@@ -108,21 +108,26 @@ export class PitController {
       },
     },
   })
-  async find(@param.query.string('villageId') villageId: string): Promise<any> {
-    const data = await this.pitRepository.find({
-      where: {
-        farmer: {villageId: villageId},
-      },
+  async find(
+    @param.query.string('sevekName') sevekName: string,
+    @param.query.string('farmerName') farmerName: string,
+    @param.query.string('villageName') villageName: string,
+    @param.query.string('stageName') stageName: string,
+  ): Promise<any> {
+    const filter: any = {
       order: ['created DESC'],
-      fields: {
-        id: true,
-        pitId: true,
-        level: true,
-        farmerId: true,
-        villageId: true,
-        equipmentId: true,
-      },
+      where: {stageName: stageName},
       include: [
+        {
+          relation: 'village',
+          scope: {
+            fields: {
+              id: true,
+              name: true,
+            },
+            where: {name: villageName},
+          },
+        },
         {
           relation: 'stages',
           scope: {
@@ -131,9 +136,21 @@ export class PitController {
               pitId: true,
               stageName: true,
               created: true,
-              modified: true,
+              updatedBy: true,
               equipmentId: true,
             },
+            include: [
+              {
+                relation: 'updatedbySevek',
+                scope: {
+                  fields: {
+                    id: true,
+                    name: true,
+                  },
+                  where: {name: sevekName},
+                },
+              },
+            ],
             order: ['created DESC'],
             limit: 1,
           },
@@ -145,20 +162,26 @@ export class PitController {
               id: true,
               name: true,
               photo: true,
-              villageId: true,
             },
-            where: {
-              villageId: villageId,
-            },
+            where: {name: farmerName},
           },
         },
       ],
-    });
+    };
+
+    const data = await this.pitRepository.find(filter);
+    const filteredData = data.filter(
+      (item: any) =>
+        item.village &&
+        item.stages &&
+        item.farmer &&
+        item.stages.some((stage: any) => stage.updatedbySevek),
+    );
 
     return {
       statusCode: 200,
       message: 'Pits List',
-      data: data,
+      data: filteredData,
     };
   }
 
