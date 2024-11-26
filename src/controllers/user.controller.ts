@@ -80,33 +80,37 @@ export class UserController {
       where: {phone: user.phone},
     });
 
-    const getUserResponse = async (userData: User) => {
-      const userProfile = await this.userService.getUserProfile(userData);
-      const token = await this.jwtService.generateToken(userProfile);
-
-      return {
-        statusCode: 200,
-        message: existingUser
-          ? 'Authentication successful'
-          : 'User added successfully.',
-        data: {
-          id: userData.id,
-          name: userData.name,
-          token,
-        },
-      };
-    };
-
     if (existingUser) {
-      return getUserResponse(existingUser);
+      if (existingUser.status === 'active') {
+        const userProfile = await this.userService.getUserProfile(existingUser);
+        const token = await this.jwtService.generateToken(userProfile);
+
+        return {
+          statusCode: 200,
+          message: 'Authentication successful',
+          data: {
+            id: existingUser.id,
+            name: existingUser.name,
+            token,
+          },
+        };
+      }
+
+      if (existingUser.status === 'waiting') {
+        return {
+          statusCode: 404,
+          message: 'User is waiting for administrator approval.',
+        };
+      }
     }
 
-    const newUser = await this.userRepository.create(user);
-    if (!newUser) {
-      throw new HttpErrors.BadRequest('Error in creating new User!');
-    }
+    user.status = 'waiting';
+    await this.userRepository.create(user);
 
-    return getUserResponse(newUser);
+    return {
+      statusCode: 404,
+      message: 'User added. Please contact the administrator for approval.',
+    };
   }
 
   @get('/user/me', {

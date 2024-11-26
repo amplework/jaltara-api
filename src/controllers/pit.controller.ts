@@ -211,10 +211,13 @@ export class PitController {
         },
       ],
     });
+
+    const checkUpperGeo =
+      await this.geographicEntityRepository.fetchUpperHierarchy(data.villageId);
     return {
       statusCode: 200,
       message: "Pit's details",
-      data: data,
+      data: {...data, checkUpperGeo},
     };
   }
 

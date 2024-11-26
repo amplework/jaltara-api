@@ -208,11 +208,14 @@ export class WellController {
         },
       ],
     };
+
     const data = await this.wellRepository.findById(id, filter);
+    const checkUpperGeo =
+      await this.geographicEntityRepository.fetchUpperHierarchy(data.villageId);
     return {
       statusCode: 200,
       message: "Well's details",
-      data: data,
+      data: {...data, checkUpperGeo},
     };
   }
 
