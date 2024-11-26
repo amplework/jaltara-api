@@ -17,6 +17,7 @@ export class Well extends Entity {
     generated: true,
   })
   id?: string;
+
   @property({
     type: 'string',
   })
@@ -24,7 +25,7 @@ export class Well extends Entity {
 
   @property({
     type: 'string',
-    required: true,
+    required: false,
   })
   gpsLocation: string;
 

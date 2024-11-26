@@ -1,10 +1,6 @@
 import {authenticate} from '@loopback/authentication';
 import {inject} from '@loopback/core';
-import {
-  AnyObject,
-  FilterExcludingWhere,
-  repository,
-} from '@loopback/repository';
+import {AnyObject, repository} from '@loopback/repository';
 import {
   del,
   get,
@@ -120,7 +116,7 @@ export class WellController {
               id: true,
               name: true,
             },
-            where: villageName ? {name: villageName} : undefined,
+            where: {name: villageName},
           },
         },
         {
@@ -133,6 +129,7 @@ export class WellController {
               updatedBy: true,
             },
             order: ['created DESC'],
+            limit: 1,
             include: [
               {
                 relation: 'updatedbySevek',
@@ -141,7 +138,7 @@ export class WellController {
                     id: true,
                     name: true,
                   },
-                  where: sevakName ? {name: sevakName} : undefined,
+                  where: {name: sevakName},
                 },
               },
             ],
@@ -172,10 +169,45 @@ export class WellController {
       },
     },
   })
-  async findById(
-    @param.path.string('id') id: string,
-    @param.filter(Well, {exclude: 'where'}) filter?: FilterExcludingWhere<Well>,
-  ): Promise<AnyObject> {
+  async findById(@param.path.string('id') id: string): Promise<AnyObject> {
+    const filter: any = {
+      include: [
+        {
+          relation: 'village',
+          scope: {
+            fields: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+        {
+          relation: 'stages',
+          scope: {
+            fields: {
+              id: true,
+              wellId: true,
+              photo: true,
+              created: true,
+              updatedBy: true,
+            },
+            order: ['created DESC'],
+            include: [
+              {
+                relation: 'updatedbySevek',
+                scope: {
+                  fields: {
+                    id: true,
+                    name: true,
+                    image: true,
+                  },
+                },
+              },
+            ],
+          },
+        },
+      ],
+    };
     const data = await this.wellRepository.findById(id, filter);
     return {
       statusCode: 200,
