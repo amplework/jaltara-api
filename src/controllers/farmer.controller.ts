@@ -1,8 +1,4 @@
-import {
-  AnyObject,
-  FilterExcludingWhere,
-  repository,
-} from '@loopback/repository';
+import {AnyObject, repository} from '@loopback/repository';
 import {
   del,
   get,
@@ -15,7 +11,11 @@ import {
   response,
 } from '@loopback/rest';
 import {Farmer} from '../models';
-import {FarmerRepository, GeographicEntityRepository} from '../repositories';
+import {
+  FarmerRepository,
+  GeographicEntityRepository,
+  PitRepository,
+} from '../repositories';
 
 export class FarmerController {
   constructor(
@@ -24,6 +24,9 @@ export class FarmerController {
 
     @repository(GeographicEntityRepository)
     public geographicEntityRepository: GeographicEntityRepository,
+
+    @repository(PitRepository)
+    public pitRepository: PitRepository,
   ) {}
 
   @post('/farmers')
@@ -128,18 +131,28 @@ export class FarmerController {
       },
     },
   })
-  async findById(
-    @param.path.string('id') id: string,
-    @param.filter(Farmer, {exclude: 'where'})
-    filter?: FilterExcludingWhere<Farmer>,
-  ): Promise<AnyObject> {
+  async findById(@param.path.string('id') id: string): Promise<AnyObject> {
     const data = await this.farmerRepository.findById(id, {
-      include: [{relation: 'pits'}],
+      include: [
+        {
+          relation: 'pits',
+        },
+        {
+          relation: 'village',
+        },
+      ],
     });
+
+    const checkUpperGeo =
+      await this.geographicEntityRepository.fetchUpperHierarchy(data.villageId);
+
     return {
       statusCode: 200,
       message: 'Farmer details',
-      data: data,
+      data: {
+        ...data,
+        checkUpperGeo: checkUpperGeo,
+      },
     };
   }
 
