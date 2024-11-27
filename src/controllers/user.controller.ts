@@ -91,6 +91,7 @@ export class UserController {
           data: {
             id: existingUser.id,
             name: existingUser.name,
+            loaction: existingUser.villageId,
             token,
           },
         };

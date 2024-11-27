@@ -3,7 +3,6 @@ import {
   del,
   get,
   getModelSchemaRef,
-  HttpErrors,
   param,
   patch,
   post,
@@ -54,7 +53,10 @@ export class FarmerController {
     });
     if (phoneExists) {
       const errorMessage = `Phone number ${phoneExists.phone} is already registered`;
-      throw new HttpErrors.Conflict(errorMessage);
+      return {
+        statusCode: 409,
+        message: errorMessage,
+      };
     }
     const data = await this.farmerRepository.create(farmer);
     return {

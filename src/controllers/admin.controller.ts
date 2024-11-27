@@ -157,64 +157,58 @@ export class AdminController {
   async findById(@param.path.string('id') id: string): Promise<AnyObject> {
     const userData = await this.userRepository.findById(id);
 
-    const checkGeo = await this.geographicEntityRepository.fetchHierarchy(
-      userData.villageId,
-    );
+    let totalCounts = {farmerCount: 0, pitCount: 0, wellCount: 0};
 
-    const checkUpperGeo =
-      await this.geographicEntityRepository.fetchUpperHierarchy(
-        userData.villageId,
-      );
+    if (userData.villageId) {
+      const [checkGeo, checkUpperGeo] = await Promise.all([
+        this.geographicEntityRepository.fetchHierarchy(userData.villageId),
+        this.geographicEntityRepository.fetchUpperHierarchy(userData.villageId),
+      ]);
 
-    const countInGeo = async (
-      geoNode: any,
-    ): Promise<{farmerCount: number; wellCount: number; pitCount: number}> => {
-      const farmerCountResult = await this.farmerRepository.count({
-        villageId: geoNode.id,
-      });
+      const countInGeo = async (
+        geoNode: any,
+      ): Promise<{
+        farmerCount: number;
+        wellCount: number;
+        pitCount: number;
+      }> => {
+        const [farmerCountResult, pitCountResult, wellCountResult] =
+          await Promise.all([
+            this.farmerRepository.count({villageId: geoNode.id}),
+            this.pitRepository.count({villageId: geoNode.id}),
+            this.wellRepository.count({villageId: geoNode.id}),
+          ]);
 
-      const pitCountResult = await this.pitRepository.count({
-        villageId: geoNode.id,
-      });
+        const childrenCounts = await Promise.all(
+          (geoNode.children || []).map((childNode: any) =>
+            countInGeo(childNode),
+          ),
+        );
 
-      const wellCountResult = await this.wellRepository.count({
-        villageId: geoNode.id,
-      });
-
-      const childrenCounts = await Promise.all(
-        (geoNode.children || []).map(async (childNode: any) => {
-          return await countInGeo(childNode);
-        }),
-      );
-
-      const totalFarmerCount =
-        farmerCountResult.count +
-        childrenCounts.reduce((sum, count) => sum + count.farmerCount, 0);
-      const totalPitCount =
-        pitCountResult.count +
-        childrenCounts.reduce((sum, count) => sum + count.pitCount, 0);
-      const totalWellCount =
-        wellCountResult.count +
-        childrenCounts.reduce((sum, count) => sum + count.wellCount, 0);
-
-      return {
-        farmerCount: totalFarmerCount,
-        pitCount: totalPitCount,
-        wellCount: totalWellCount,
+        return {
+          farmerCount:
+            farmerCountResult.count +
+            childrenCounts.reduce((sum, count) => sum + count.farmerCount, 0),
+          pitCount:
+            pitCountResult.count +
+            childrenCounts.reduce((sum, count) => sum + count.pitCount, 0),
+          wellCount:
+            wellCountResult.count +
+            childrenCounts.reduce((sum, count) => sum + count.wellCount, 0),
+        };
       };
-    };
 
-    const totalCounts = await countInGeo(checkGeo);
+      totalCounts = await countInGeo(checkGeo);
+      userData.checkUpperGeo = checkUpperGeo;
+    }
+
     return {
       statusCode: 200,
       message: 'User details',
       data: {
         ...userData,
-        checkUpperGeo: checkUpperGeo,
       },
-      farmerCount: totalCounts.farmerCount,
-      pitCount: totalCounts.pitCount,
-      wellCount: totalCounts.wellCount,
+      ...totalCounts,
     };
   }
 
@@ -240,6 +234,9 @@ export class AdminController {
       }
     }
 
+    if (user.villageId) {
+      await this.geographicEntityRepository.findById(user.villageId);
+    }
     await this.userRepository.updateById(id, user);
     return {
       statusCode: 200,
