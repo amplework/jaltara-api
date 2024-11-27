@@ -84,33 +84,22 @@ export class AdminController {
       where: {phone: user.phone},
     });
 
-    const getUserResponse = async (userData: User) => {
-      const userProfile = await this.userService.getUserProfile(userData);
-      const token = await this.jwtService.generateToken(userProfile);
-
-      return {
-        statusCode: 200,
-        message: existingUser
-          ? 'Authentication successful'
-          : 'User added successfully.',
-        data: {
-          id: userData.id,
-          name: userData.name,
-          token,
-        },
-      };
-    };
-
     if (existingUser) {
-      return getUserResponse(existingUser);
+      return {
+        statusCode: 409,
+        message: 'Sevek is already registered',
+      };
     }
 
     const newUser = await this.userRepository.create(user);
     if (!newUser) {
       throw new HttpErrors.BadRequest('Error in creating new User!');
     }
-
-    return getUserResponse(newUser);
+    return {
+      statusCode: 201,
+      message: 'Sevek added successfully',
+      data: newUser,
+    };
   }
 
   @get('/sevak-list')
@@ -241,11 +230,20 @@ export class AdminController {
     if (!userExists) {
       throw new HttpErrors.NotFound('User account not found');
     }
-    const data = await this.userRepository.updateById(id, user);
+
+    if (!userExists.villageId) {
+      if (user.status === 'active' && !user.villageId) {
+        return {
+          statusCode: 422,
+          message: 'User cannot be active until a location has been assigned',
+        };
+      }
+    }
+
+    await this.userRepository.updateById(id, user);
     return {
       statusCode: 200,
       message: 'User details updated',
-      data: data,
     };
   }
 
@@ -260,97 +258,4 @@ export class AdminController {
       message: 'User deleted successfully',
     };
   }
-
-  // @get('/sevak-pits')
-  // @response(200, {
-  //   description: 'Array of Pit model instances',
-  //   content: {
-  //     'application/json': {
-  //       schema: {
-  //         type: 'array',
-  //         items: getModelSchemaRef(Pit, {includeRelations: true}),
-  //       },
-  //     },
-  //   },
-  // })
-  // async findPit(
-  //   @param.query.string('villageName') villageName: string,
-  //   @param.query.string('name') name: string,
-  // ): Promise<any> {
-  //   const data = await this.userRepository.find({
-  //     order: ['created DESC'],
-  //     where: {
-  //       name: name,
-  //     },
-  //     fields: {
-  //       id: true,
-  //       name: true,
-  //       villageId: true,
-  //     },
-  //     include: [
-  //       {
-  //         relation: 'village',
-  //         scope: {
-  //           where: {
-  //             name: villageName,
-  //             id: {neq: null},
-  //           },
-  //         },
-  //       },
-  //     ],
-  //   });
-
-  //   const userDetails = [];
-
-  //   for (const userData of data) {
-  //     const checkGeo = await this.geographicEntityRepository.fetchHierarchy(
-  //       userData.villageId,
-  //     );
-
-  //     const countInGeo = async (
-  //       geoNode: any,
-  //     ): Promise<{
-  //       pitCount: number;
-  //     }> => {
-  //       const pitCountInCurrentNode = await this.pitRepository.count({
-  //         villageId: geoNode.id,
-  //       });
-
-  //       const childrenCounts = await Promise.all(
-  //         (geoNode.children || []).map(async (childNode: any) => {
-  //           return await countInGeo(childNode);
-  //         }),
-  //       );
-
-  //       const totalPitCount =
-  //         pitCountInCurrentNode.count +
-  //         childrenCounts.reduce((sum, result) => sum + result.pitCount, 0);
-
-  //       return {
-  //         pitCount: totalPitCount,
-  //       };
-  //     };
-
-  //     const totalCounts = await countInGeo(checkGeo);
-
-  //     userDetails.push({
-  //       userData,
-  //       pitCount: totalCounts.pitCount,
-  //     });
-  //   }
-  //   const totalDugPit = await this.pitRepository.count({
-  //     stageName: 'digging',
-  //   });
-  //   const totalCompletePit = await this.pitRepository.count({
-  //     stageName: 'filling',
-  //   });
-
-  //   return {
-  //     statusCode: 200,
-  //     message: 'User details with pit counts and stages',
-  //     totalDugPit: totalDugPit.count,
-  //     totalCompletePit: totalCompletePit.count,
-  //     data: userDetails,
-  //   };
-  // }
 }

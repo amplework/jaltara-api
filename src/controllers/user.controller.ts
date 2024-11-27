@@ -98,18 +98,19 @@ export class UserController {
 
       if (existingUser.status === 'waiting') {
         return {
-          statusCode: 404,
+          statusCode: 422,
           message: 'User is waiting for administrator approval.',
         };
       }
     }
 
     user.status = 'waiting';
-    await this.userRepository.create(user);
+    const userData = await this.userRepository.create(user);
 
     return {
-      statusCode: 404,
+      statusCode: 201,
       message: 'User added. Please contact the administrator for approval.',
+      data: userData,
     };
   }
 

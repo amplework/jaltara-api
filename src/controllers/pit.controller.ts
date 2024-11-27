@@ -197,7 +197,24 @@ export class PitController {
   async findById(@param.path.string('id') id: string): Promise<AnyObject> {
     const data = await this.pitRepository.findById(id, {
       include: [
-        {relation: 'stages'},
+        {
+          relation: 'stages',
+          scope: {
+            include: [
+              {
+                relation: 'updatedbySevek',
+                scope: {
+                  fields: {
+                    id: true,
+                    name: true,
+                    image: true,
+                  },
+                },
+              },
+            ],
+            order: ['created DESC'],
+          },
+        },
         {relation: 'village'},
         {
           relation: 'farmer',
