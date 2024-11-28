@@ -1,5 +1,6 @@
-import {belongsTo, Entity, model, property} from '@loopback/repository';
+import {belongsTo, Entity, model, property, hasMany} from '@loopback/repository';
 import {GeographicEntity} from './geographic-entity.model';
+import {Stage} from './stage.model';
 
 @model({settings: {strict: false}})
 export class User extends Entity {
@@ -77,6 +78,9 @@ export class User extends Entity {
 
   @belongsTo(() => GeographicEntity)
   villageId: string;
+
+  @hasMany(() => Stage, {keyTo: 'updatedBy'})
+  stages: Stage[];
   // Define well-known properties here
 
   // Indexer property to allow additional data

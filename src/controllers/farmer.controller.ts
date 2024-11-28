@@ -134,28 +134,25 @@ export class FarmerController {
     },
   })
   async findById(@param.path.string('id') id: string): Promise<AnyObject> {
-    const data = await this.farmerRepository.findById(id, {
-      include: [
-        {
-          relation: 'pits',
-        },
-        {
-          relation: 'village',
-        },
-      ],
+    const farmerData = await this.farmerRepository.findById(id, {
+      include: [{relation: 'pits'}, {relation: 'village'}],
     });
 
-    const checkUpperGeo =
-      await this.geographicEntityRepository.fetchUpperHierarchy(data.villageId);
-
-    return {
+    const response: AnyObject = {
       statusCode: 200,
       message: 'Farmer details',
-      data: {
-        ...data,
-        checkUpperGeo: checkUpperGeo,
-      },
+      data: farmerData,
     };
+
+    if (farmerData.villageId) {
+      const checkUpperGeo =
+        await this.geographicEntityRepository.fetchUpperHierarchy(
+          farmerData.villageId,
+        );
+      response.data = {...farmerData, checkUpperGeo};
+    }
+
+    return response;
   }
 
   @patch('/farmers/{id}')

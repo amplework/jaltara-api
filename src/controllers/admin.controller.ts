@@ -155,7 +155,80 @@ export class AdminController {
     },
   })
   async findById(@param.path.string('id') id: string): Promise<AnyObject> {
-    const userData = await this.userRepository.findById(id);
+    const userData = await this.userRepository.findById(id, {
+      include: [
+        {
+          relation: 'stages',
+          scope: {
+            include: [
+              {
+                relation: 'pit',
+                scope: {
+                  fields: {
+                    id: true,
+                    pitId: true,
+                    photo: true,
+                    plotSize: true,
+                    level: true,
+                    farmerId: true,
+                    villageId: true,
+                  },
+                  include: [
+                    {
+                      relation: 'farmer',
+                      scope: {
+                        fields: {
+                          id: true,
+                          name: true,
+                          photo: true,
+                          land: true,
+                          villageId: true,
+                        },
+                      },
+                    },
+                    {
+                      relation: 'village',
+                      scope: {
+                        fields: {
+                          id: true,
+                          name: true,
+                        },
+                      },
+                    },
+                    {relation: 'logs'},
+                  ],
+                },
+              },
+              {
+                relation: 'well',
+                scope: {
+                  fields: {
+                    id: true,
+                    wellId: true,
+                    photo: true,
+                    plotSize: true,
+                    level: true,
+                    villageId: true,
+                  },
+                  include: [
+                    {
+                      relation: 'village',
+                      scope: {
+                        fields: {
+                          id: true,
+                          name: true,
+                        },
+                      },
+                    },
+                    {relation: 'logs'},
+                  ],
+                },
+              },
+            ],
+          },
+        },
+      ],
+    });
 
     let totalCounts = {farmerCount: 0, pitCount: 0, wellCount: 0};
 
@@ -207,8 +280,8 @@ export class AdminController {
       message: 'User details',
       data: {
         ...userData,
+        ...totalCounts,
       },
-      ...totalCounts,
     };
   }
 

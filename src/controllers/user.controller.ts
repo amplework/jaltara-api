@@ -85,14 +85,19 @@ export class UserController {
         const userProfile = await this.userService.getUserProfile(existingUser);
         const token = await this.jwtService.generateToken(userProfile);
 
+        const checkUpperGeo =
+          await this.geographicEntityRepository.fetchUpperHierarchy(
+            existingUser.villageId,
+          );
+
         return {
           statusCode: 200,
           message: 'Authentication successful',
           data: {
             id: existingUser.id,
             name: existingUser.name,
-            loaction: existingUser.villageId,
             token,
+            loaction: checkUpperGeo,
           },
         };
       }
