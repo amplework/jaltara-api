@@ -135,7 +135,43 @@ export class FarmerController {
   })
   async findById(@param.path.string('id') id: string): Promise<AnyObject> {
     const farmerData = await this.farmerRepository.findById(id, {
-      include: [{relation: 'pits'}, {relation: 'village'}],
+      include: [
+        {
+          relation: 'pits',
+          scope: {
+            fields: {
+              id: true,
+              pitId: true,
+              photo: true,
+              plotSize: true,
+              level: true,
+              farmerId: true,
+              villageId: true,
+            },
+            include: [
+              {
+                relation: 'stages',
+                scope: {
+                  include: [
+                    {
+                      relation: 'updatedbySevek',
+                      scope: {
+                        fields: {
+                          id: true,
+                          name: true,
+                        },
+                      },
+                    },
+                  ],
+                  order: ['created DESC'],
+                  limit: 1,
+                },
+              },
+            ],
+          },
+        },
+        {relation: 'village'},
+      ],
     });
 
     const response: AnyObject = {

@@ -136,12 +136,12 @@ export class AdminController {
       ],
     });
 
-    const filteredData = data.filter(user => user.village);
+    // const filteredData = data.filter(user => user.village);
 
     return {
       statusCode: 200,
       message: 'User list',
-      data: filteredData,
+      data: data,
     };
   }
 

@@ -1,4 +1,4 @@
-import {Filter, FilterExcludingWhere, repository} from '@loopback/repository';
+import {FilterExcludingWhere, repository} from '@loopback/repository';
 import {
   del,
   get,
@@ -59,9 +59,16 @@ export class FarmersChallengeController {
     },
   })
   async find(
-    @param.filter(FarmersChallenge) filter?: Filter<FarmersChallenge>,
+    @param.query.string('challenge') challenge?: string,
+    @param.query.string('status') status?: string,
   ): Promise<any> {
-    const data = await this.farmersChallengeRepository.find(filter);
+    const data = await this.farmersChallengeRepository.find({
+      where: {
+        challenge: challenge,
+        status: status,
+      },
+      order: ['created DESC'],
+    });
     return {
       statusCode: 200,
       message: "Farmer's Challenges List",
@@ -82,8 +89,13 @@ export class FarmersChallengeController {
     @param.path.string('id') id: string,
     @param.filter(FarmersChallenge, {exclude: 'where'})
     filter?: FilterExcludingWhere<FarmersChallenge>,
-  ): Promise<FarmersChallenge> {
-    return this.farmersChallengeRepository.findById(id, filter);
+  ): Promise<any> {
+    const data = await this.farmersChallengeRepository.findById(id);
+    return {
+      statusCode: 200,
+      message: 'farmers-challenges details',
+      data: data,
+    };
   }
 
   @patch('/farmers-challenges/{id}')
@@ -100,8 +112,12 @@ export class FarmersChallengeController {
       },
     })
     farmersChallenge: FarmersChallenge,
-  ): Promise<void> {
+  ): Promise<any> {
     await this.farmersChallengeRepository.updateById(id, farmersChallenge);
+    return {
+      statusCode: 200,
+      message: 'farmers-challenges update successfully',
+    };
   }
 
   @del('/farmers-challenges/{id}')

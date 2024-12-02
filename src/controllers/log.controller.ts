@@ -62,43 +62,43 @@ export class LogController {
       );
     }
 
-    if (log.type === 'pit') {
-      if (!log.pitId) {
-        throw new HttpErrors.BadRequest(
-          'pitId is required when type is "pit".',
-        );
-      }
-      const pitExists = await this.pitRepository.exists(log.pitId);
-      if (!pitExists) {
-        throw new HttpErrors.NotFound(`Pit ${log.pitId} does not exist`);
-      }
-    } else if (log.type === 'well') {
-      if (!log.wellId) {
-        throw new HttpErrors.BadRequest(
-          'wellId is required when type is "well".',
-        );
-      }
-      const wellExists = await this.wellRepository.exists(log.wellId);
-      if (!wellExists) {
-        throw new HttpErrors.NotFound(`Well ${log.wellId} does not exist`);
-      }
-    } else {
-      throw new HttpErrors.BadRequest(
-        'Invalid type. Type must be either "pit" or "well".',
-      );
-    }
+    // if (log.type === 'pit') {
+    //   if (!log.pitId) {
+    //     throw new HttpErrors.BadRequest(
+    //       'pitId is required when type is "pit".',
+    //     );
+    //   }
+    //   const pitExists = await this.pitRepository.exists(log.pitId);
+    //   if (!pitExists) {
+    //     throw new HttpErrors.NotFound(`Pit ${log.pitId} does not exist`);
+    //   }
+    // } else if (log.type === 'well') {
+    //   if (!log.wellId) {
+    //     throw new HttpErrors.BadRequest(
+    //       'wellId is required when type is "well".',
+    //     );
+    //   }
+    //   const wellExists = await this.wellRepository.exists(log.wellId);
+    //   if (!wellExists) {
+    //     throw new HttpErrors.NotFound(`Well ${log.wellId} does not exist`);
+    //   }
+    // } else {
+    //   throw new HttpErrors.BadRequest(
+    //     'Invalid type. Type must be either "pit" or "well".',
+    //   );
+    // }
 
     const startTime = new Date(log.startTime);
-    const endTime = new Date(log.endTime);
+    // const endTime = new Date(log.endTime);
 
-    if (isBefore(endTime, startTime)) {
-      throw new HttpErrors.BadRequest('End time cannot be before start time.');
-    }
+    // if (isBefore(endTime, startTime)) {
+    //   throw new HttpErrors.BadRequest('End time cannot be before start time.');
+    // }
 
-    const totalMinutes = differenceInMinutes(endTime, startTime);
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
-    log.timeRecord = `${hours}:${minutes.toString().padStart(2, '0')} Hrs.`;
+    // const totalMinutes = differenceInMinutes(endTime, startTime);
+    // const hours = Math.floor(totalMinutes / 60);
+    // const minutes = totalMinutes % 60;
+    // log.timeRecord = `${hours}:${minutes.toString().padStart(2, '0')} Hrs.`;
 
     const data = await this.logRepository.create(log);
     return {
@@ -187,6 +187,24 @@ export class LogController {
     })
     log: Log,
   ): Promise<any> {
+    const logData = await this.logRepository.findById(id);
+
+    if (logData.startTime) {
+      const startTime = new Date(logData.startTime);
+      const endTime = new Date(log.endTime);
+
+      if (isBefore(endTime, startTime)) {
+        throw new HttpErrors.BadRequest(
+          'End time cannot be before start time.',
+        );
+      }
+
+      const totalMinutes = differenceInMinutes(endTime, startTime);
+      const hours = Math.floor(totalMinutes / 60);
+      const minutes = totalMinutes % 60;
+      log.timeRecord = `${hours}:${minutes.toString().padStart(2, '0')} Hrs.`;
+    }
+
     await this.logRepository.updateById(id, log);
     return {
       statusCode: 200,

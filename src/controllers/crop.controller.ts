@@ -60,11 +60,15 @@ export class CropController {
       },
     },
   })
-  async find(@param.query.string('name') name: string): Promise<any> {
+  async find(
+    @param.query.string('name') name: string,
+    @param.query.string('status') status?: string,
+  ): Promise<any> {
     const data = await this.cropRepository.find({
       order: ['created DESC'],
       where: {
         name: name,
+        status: status,
       },
     });
     return {

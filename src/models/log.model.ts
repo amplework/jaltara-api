@@ -1,8 +1,8 @@
 import {belongsTo, Entity, model, property} from '@loopback/repository';
 import {Equipment} from './equipment.model';
 import {Pit} from './pit.model';
-import {Well} from './well.model';
 import {User} from './user.model';
+import {Well} from './well.model';
 
 @model({settings: {strict: false}})
 export class Log extends Entity {
@@ -12,12 +12,10 @@ export class Log extends Entity {
     generated: true,
   })
   id?: string;
+
   @property({
     type: 'string',
-    required: true,
-    jsonSchema: {
-      enum: ['well', 'pit'],
-    },
+    required: false,
   })
   type: string;
 
@@ -46,7 +44,7 @@ export class Log extends Entity {
 
   @property({
     type: 'date',
-    required: true,
+    required: false,
   })
   endTime: string;
 

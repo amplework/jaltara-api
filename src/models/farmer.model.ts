@@ -1,6 +1,12 @@
-import {Entity, hasMany, model, property, belongsTo} from '@loopback/repository';
-import {Pit} from './pit.model';
+import {
+  belongsTo,
+  Entity,
+  hasMany,
+  model,
+  property,
+} from '@loopback/repository';
 import {GeographicEntity} from './geographic-entity.model';
+import {Pit} from './pit.model';
 
 @model({settings: {strict: false}})
 export class Farmer extends Entity {
@@ -54,7 +60,7 @@ export class Farmer extends Entity {
 
   @property({
     type: 'string',
-    required: true,
+    required: false,
   })
   language: string;
 
