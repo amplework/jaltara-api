@@ -79,7 +79,7 @@ export class GeographicEntityRepository extends DefaultCrudRepository<
     return entity;
   }
 
-  async fetchUpperHierarchy(id: string): Promise<GeographicEntity | null> {
+  async fetchUpperHierarchy(id: any): Promise<GeographicEntity | null> {
     const entity = await this.findById(id);
 
     if (!entity) return null;

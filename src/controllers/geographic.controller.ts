@@ -88,6 +88,84 @@ export class GeographicController {
     };
   }
 
+  @get('/locations')
+  @response(200, {
+    description: 'Array of GeographicEntity model instances',
+    content: {
+      'application/json': {
+        schema: {
+          type: 'array',
+          items: getModelSchemaRef(GeographicEntity, {includeRelations: true}),
+        },
+      },
+    },
+  })
+  async locations(
+    @param.filter(GeographicEntity) filter?: Filter<GeographicEntity>,
+    @param.query.string('entityType') entityType?: string,
+    @param.query.string('parentId') parentId?: string,
+  ): Promise<any> {
+    const data = await this.geographicEntityRepository.find({
+      where: {
+        entityType: entityType || 'village',
+      },
+    });
+
+    const enrichedData = await Promise.all(
+      data.map(async geo => {
+        const upperHierarchy =
+          await this.geographicEntityRepository.fetchUpperHierarchy(geo.id);
+
+        const farmerCount = await this.geographicEntityRepository
+          .farmers(geo.id)
+          .find({})
+          .then(farmers => farmers.length);
+
+        return {
+          ...geo,
+          upperHierarchy,
+          farmerCount,
+        };
+      }),
+    );
+
+    return {
+      statusCode: 200,
+      message: "Village's list",
+      data: enrichedData,
+    };
+  }
+
+  // async locations(
+  //   @param.filter(GeographicEntity) filter?: Filter<GeographicEntity>,
+  //   @param.query.string('entityType') entityType?: string,
+  //   @param.query.string('parentId') parentId?: string,
+  // ): Promise<any> {
+  //   const data = await this.geographicEntityRepository.find({
+  //     where: {
+  //       entityType: entityType || 'village',
+  //     },
+  //     include: [{relation: 'farmers'}],
+  //   });
+
+  //   const enrichedData = await Promise.all(
+  //     data.map(async geo => {
+  //       const upperHierarchy =
+  //         await this.geographicEntityRepository.fetchUpperHierarchy(geo.id);
+  //       return {
+  //         ...geo,
+  //         upperHierarchy,
+  //       };
+  //     }),
+  //   );
+
+  //   return {
+  //     statusCode: 200,
+  //     message: "Village's list",
+  //     data: enrichedData,
+  //   };
+  // }
+
   @get('/geographic-entities/{id}')
   @response(200, {
     description: 'GeographicEntity model instance',
