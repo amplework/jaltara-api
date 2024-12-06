@@ -17,19 +17,25 @@ export class Log extends Entity {
     type: 'string',
     required: false,
   })
-  type: string;
+  photoCheckIn: string;
 
   @property({
     type: 'string',
-    required: true,
+    required: false,
   })
-  photo: string;
+  photoCheckOut: string;
 
   @property({
     type: 'string',
-    required: true,
+    required: false,
   })
-  reading: string;
+  meterReadingCheckIn: string;
+
+  @property({
+    type: 'string',
+    required: false,
+  })
+  meterReadingCheckout: string;
 
   @property({
     type: 'string',

@@ -145,6 +145,55 @@ export class AdminController {
     };
   }
 
+  @get('/list')
+  @response(200, {
+    description: 'Array of User model instances',
+    content: {
+      'application/json': {
+        schema: {
+          type: 'array',
+          items: getModelSchemaRef(User, {includeRelations: true}),
+        },
+      },
+    },
+  })
+  async findSevek(
+    @param.query.string('villageName') villageName?: string,
+    @param.query.string('name') name?: string,
+  ): Promise<any> {
+    const whereCondition: any = {};
+    if (name) {
+      whereCondition.name = {name, $options: 'i'};
+    }
+
+    const includeCondition: any = {
+      relation: 'village',
+      scope: {
+        where: {
+          id: {neq: null},
+        },
+      },
+    };
+
+    if (villageName) {
+      includeCondition.scope.where.name = {villageName, $options: 'i'};
+    }
+    console.log(includeCondition);
+    console.log(whereCondition);
+
+    const data = await this.userRepository.find({
+      order: ['created DESC'],
+      where: whereCondition,
+      include: [includeCondition],
+    });
+
+    return {
+      statusCode: 200,
+      message: 'User list',
+      data: data,
+    };
+  }
+
   @get('/sevak-details/{id}')
   @response(200, {
     description: 'User model instance',

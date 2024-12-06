@@ -49,6 +49,28 @@ export class GeographicController {
         ? _.omit(geographicEntity, ['parentId'])
         : geographicEntity;
 
+    if (geographicEntity.entityType !== 'state') {
+      if (!geographicEntity.parentId) {
+        return {
+          statusCode: 422,
+          message: `parentId key required for entityType ${geographicEntity.entityType}`,
+        };
+      }
+    }
+    const dataCheck = await this.geographicEntityRepository.findOne({
+      where: {
+        entityType: geographicEntity.entityType,
+        name: geographicEntity.name,
+      },
+    });
+
+    if (dataCheck) {
+      return {
+        statusCode: 409,
+        message: 'This Geographic entity is already exists',
+      };
+    }
+
     const createdData =
       await this.geographicEntityRepository.create(newGeoData);
 
@@ -113,8 +135,9 @@ export class GeographicController {
 
     const enrichedData = await Promise.all(
       data.map(async geo => {
-        const upperHierarchy =
+        const checkUpperGeo =
           await this.geographicEntityRepository.fetchUpperHierarchy(geo.id);
+        if (!checkUpperGeo) return null;
 
         const farmerCount = await this.geographicEntityRepository
           .farmers(geo.id)
@@ -123,7 +146,7 @@ export class GeographicController {
 
         return {
           ...geo,
-          upperHierarchy,
+          checkUpperGeo,
           farmerCount,
         };
       }),
@@ -136,35 +159,35 @@ export class GeographicController {
     };
   }
 
-  // async locations(
-  //   @param.filter(GeographicEntity) filter?: Filter<GeographicEntity>,
-  //   @param.query.string('entityType') entityType?: string,
-  //   @param.query.string('parentId') parentId?: string,
-  // ): Promise<any> {
-  //   const data = await this.geographicEntityRepository.find({
-  //     where: {
-  //       entityType: entityType || 'village',
-  //     },
-  //     include: [{relation: 'farmers'}],
-  //   });
+  @get('/locations/{id}')
+  @response(200, {
+    description: 'GeographicEntity model instance',
+    content: {
+      'application/json': {
+        schema: getModelSchemaRef(GeographicEntity, {includeRelations: true}),
+      },
+    },
+  })
+  async locationsById(
+    @param.path.string('id') id: string,
+    @param.filter(GeographicEntity, {exclude: 'where'})
+    filter?: FilterExcludingWhere<GeographicEntity>,
+  ): Promise<any> {
+    const geo = await this.geographicEntityRepository.findById(id, filter);
+    const checkUpperGeo =
+      await this.geographicEntityRepository.fetchUpperHierarchy(geo.id);
 
-  //   const enrichedData = await Promise.all(
-  //     data.map(async geo => {
-  //       const upperHierarchy =
-  //         await this.geographicEntityRepository.fetchUpperHierarchy(geo.id);
-  //       return {
-  //         ...geo,
-  //         upperHierarchy,
-  //       };
-  //     }),
-  //   );
+    const farmerCount = await this.geographicEntityRepository
+      .farmers(geo.id)
+      .find({})
+      .then(farmers => farmers.length);
 
-  //   return {
-  //     statusCode: 200,
-  //     message: "Village's list",
-  //     data: enrichedData,
-  //   };
-  // }
+    return {
+      ...geo,
+      checkUpperGeo,
+      farmerCount,
+    };
+  }
 
   @get('/geographic-entities/{id}')
   @response(200, {
