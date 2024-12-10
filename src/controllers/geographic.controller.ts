@@ -44,32 +44,31 @@ export class GeographicController {
     })
     geographicEntity: Omit<GeographicEntity, 'id'>,
   ): Promise<any> {
+    if (geographicEntity.entityType !== 'state' && !geographicEntity.parentId) {
+      return {
+        statusCode: 422,
+        message: `parentId key is required for entityType ${geographicEntity.entityType}`,
+      };
+    }
+
+    const existingEntity = await this.geographicEntityRepository.findOne({
+      where: {
+        entityType: geographicEntity.entityType,
+        name: new RegExp(`^${geographicEntity.name}$`, 'i'),
+      },
+    });
+
+    if (existingEntity) {
+      return {
+        statusCode: 409,
+        message: `The Geographic entity with name '${geographicEntity.name}' already exists for entityType '${geographicEntity.entityType}'`,
+      };
+    }
+
     const newGeoData =
       geographicEntity.entityType === 'state'
         ? _.omit(geographicEntity, ['parentId'])
         : geographicEntity;
-
-    if (geographicEntity.entityType !== 'state') {
-      if (!geographicEntity.parentId) {
-        return {
-          statusCode: 422,
-          message: `parentId key required for entityType ${geographicEntity.entityType}`,
-        };
-      }
-    }
-    const dataCheck = await this.geographicEntityRepository.findOne({
-      where: {
-        entityType: geographicEntity.entityType,
-        name: geographicEntity.name,
-      },
-    });
-
-    if (dataCheck) {
-      return {
-        statusCode: 409,
-        message: 'This Geographic entity is already exists',
-      };
-    }
 
     const createdData =
       await this.geographicEntityRepository.create(newGeoData);

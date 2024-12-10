@@ -40,6 +40,18 @@ export class Well extends Entity {
   })
   description?: string;
 
+  @property({
+    type: 'date',
+    default: () => new Date(),
+  })
+  created?: string;
+
+  @property({
+    type: 'date',
+    default: () => new Date(),
+  })
+  modified?: string;
+
   @hasMany(() => Log)
   logs: Log[];
 

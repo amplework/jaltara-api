@@ -10,3 +10,4 @@ export * from './log.repository';
 export * from './crop.repository';
 export * from './geographic-entity.repository';
 export * from './farmers-challenge.repository';
+export * from './tutorial.repository';

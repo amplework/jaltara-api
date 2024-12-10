@@ -71,7 +71,7 @@ export class WellController {
 
     const newWellData = _.omit(well, ['equipmentId']);
     const createdWell = await this.wellRepository.create(newWellData);
-
+    console.log('new well created', createdWell.id);
     if (createdWell.id) {
       const stageData = {
         wellId: createdWell.id,
@@ -108,6 +108,7 @@ export class WellController {
     @param.query.string('sevakName') sevakName: string,
   ): Promise<any> {
     const filter: any = {
+      order: ['created DESC'],
       include: [
         {
           relation: 'village',

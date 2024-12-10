@@ -117,10 +117,12 @@ export class FarmerController {
       totalPits: farmer.pits?.length || 0,
     }));
 
+    const filteredData = enrichedData.filter((item: any) => item.village);
+
     return {
       statusCode: 200,
       message: "Farmer's list",
-      data: enrichedData,
+      data: filteredData,
     };
   }
 

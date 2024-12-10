@@ -10,3 +10,4 @@ export * from './user-credential.model';
 export * from './user.model';
 export * from './well.model';
 export * from './farmers-challenge.model';
+export * from './tutorial.model';

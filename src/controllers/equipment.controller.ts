@@ -1,4 +1,4 @@
-import {AnyObject, Filter, repository} from '@loopback/repository';
+import {AnyObject, repository} from '@loopback/repository';
 import {
   del,
   get,
@@ -57,9 +57,13 @@ export class EquipmentController {
     },
   })
   async find(
-    @param.filter(Equipment) filter?: Filter<Equipment>,
+    @param.query.string('name') name: string,
+    @param.query.string('equipment') equipment: string,
   ): Promise<any> {
-    const data = await this.equipmentRepository.find(filter);
+    const data = await this.equipmentRepository.find({
+      order: ['created DESC'],
+      where: {name: name, equipment: equipment},
+    });
     return {
       statusCode: 200,
       message: "Equipment's List",
