@@ -10,6 +10,10 @@ export class UserWithRoles extends User {
   status: string;
 }
 
+export type PhoneNumber = {
+  phone: string;
+};
+
 export type Credentials = {
   email: string;
   password: string;
@@ -120,6 +124,24 @@ export const otpCredentialsRequestBody = {
   description: 'The input of login function',
   content: {
     'application/json': {schema: otpCredentialsSchema},
+  },
+};
+
+export const PhoneCredentialsSchema: SchemaObject = {
+  type: 'object',
+  required: ['phone'],
+  properties: {
+    phone: {
+      type: 'string',
+      minLength: 10,
+    },
+  },
+};
+
+export const phoneRequestBody = {
+  description: 'The input of login function',
+  content: {
+    'application/json': {schema: PhoneCredentialsSchema},
   },
 };
 

@@ -22,7 +22,6 @@ export class Tutorial extends Entity {
 
   @property({
     type: 'string',
-    required: true,
   })
   status: string;
 
@@ -33,6 +32,7 @@ export class Tutorial extends Entity {
   videos?: {
     id: string;
     url: string;
+    name: string;
     thumbnail: string;
     status: string;
   }[];

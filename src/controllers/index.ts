@@ -7,6 +7,6 @@ export * from './geographic.controller';
 export * from './log.controller';
 export * from './pit.controller';
 export * from './stage.controller';
+export * from './tutorial.controller';
 export * from './user.controller';
 export * from './well.controller';
-export * from './tutorial.controller';

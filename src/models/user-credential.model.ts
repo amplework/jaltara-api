@@ -1,4 +1,4 @@
-import {Entity, model, property, belongsTo} from '@loopback/repository';
+import {belongsTo, Entity, model, property} from '@loopback/repository';
 import {User} from './user.model';
 
 @model({settings: {strict: false}})
@@ -14,6 +14,11 @@ export class UserCredential extends Entity {
     type: 'string',
   })
   token?: string;
+
+  @property({
+    type: 'string',
+  })
+  phone?: string;
 
   @property({
     type: 'date',

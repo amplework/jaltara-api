@@ -26,9 +26,7 @@ export class JWTService implements TokenService {
         `Error verifying token : 'token' is null`,
       );
     }
-
     let userProfile: UserProfile;
-
     try {
       const decodedToken = await verifyAsync(token, this.jwtSecret);
       userProfile = Object.assign(

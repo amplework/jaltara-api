@@ -23,7 +23,6 @@ export class MyUserService implements UserService<User, Credentials> {
       name: user.name,
       id: user.id,
     };
-
     return userProfile;
   }
 
@@ -38,6 +37,19 @@ export class MyUserService implements UserService<User, Credentials> {
       return false;
     }
     return true;
+  }
+
+  async checkPhoneNumber(number: any): Promise<any> {
+    console.log('number', number);
+    const userFind = await this.userRepository.findOne({
+      where: {
+        phone: number,
+      },
+    });
+    if (userFind) {
+      return userFind;
+    }
+    return false;
   }
 
   async getUserProfile(user: User): Promise<UserProfile> {

@@ -24,7 +24,11 @@ import {
 import {PasswordHasher} from '../services/hash.password.bcryptjs';
 import {TokenService} from '../services/jwt-service';
 import {MyUserService} from '../services/user-service';
-import {UserProfileSchema} from '../utils/type-schema';
+import {
+  PhoneNumber,
+  phoneRequestBody,
+  UserProfileSchema,
+} from '../utils/type-schema';
 
 export class UserController {
   constructor(
@@ -113,10 +117,50 @@ export class UserController {
     user.status = 'waiting';
     const userData = await this.userRepository.create(user);
 
+    await this.userRepository
+      .userCredential(userData.id)
+      .create({phone: user.phone});
+
     return {
       statusCode: 201,
       message: 'User added. Please contact the administrator for approval.',
       data: userData,
+    };
+  }
+
+  @post('/login', {
+    responses: {
+      '200': {
+        description: 'Token',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                token: {
+                  type: 'string',
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  async otpLogin(
+    @requestBody(phoneRequestBody) phoneNumber: PhoneNumber,
+  ): Promise<any> {
+    const user = await this.userService.checkPhoneNumber(phoneNumber.phone);
+    const userProfile = await this.userService.getUserProfile(user);
+    const token = await this.jwtService.generateToken(userProfile);
+    return {
+      statusCode: 200,
+      message: 'Authentication successful',
+      data: {
+        id: user.id,
+        name: user.name,
+        token: token,
+      },
     };
   }
 
