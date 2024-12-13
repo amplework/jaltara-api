@@ -10,3 +10,4 @@ export * from './stage.controller';
 export * from './tutorial.controller';
 export * from './user.controller';
 export * from './well.controller';
+export * from './image.controller';
