@@ -42,10 +42,10 @@ export class ImageController {
             return;
           }
 
-          const randomNumber = Math.floor(100000 + Math.random() * 900000);
+          const timestamp = new Date().toISOString().replace(/[-:.TZ]/g, '');
           cloudinary.uploader
             .upload_stream(
-              {public_id: `${randomNumber}${request.file.originalname}`},
+              {public_id: `${timestamp}_${request.file.originalname}`},
               async (error, result) => {
                 if (error) {
                   reject(
