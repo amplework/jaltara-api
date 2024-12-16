@@ -273,6 +273,15 @@ export class UserController {
     const {id} = currentUserProfile;
 
     const userExists = await this.userRepository.findById(id);
+
+    if (user.phone) {
+      const existingUser = await this.userRepository.findOne({
+        where: {phone: user.phone},
+      });
+      if (existingUser) {
+        throw new HttpErrors[409]('phone number is already taken');
+      }
+    }
     if (!userExists) {
       throw new HttpErrors.NotFound('User account not found');
     }
