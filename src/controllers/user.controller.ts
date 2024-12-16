@@ -82,30 +82,33 @@ export class UserController {
   ): Promise<any> {
     const existingUser = await this.userRepository.findOne({
       where: {phone: user.phone},
+      fields: {id: true, name: true, status: true, villageId: true},
     });
 
     if (existingUser) {
       if (existingUser.status === 'active') {
-        const userProfile = await this.userService.getUserProfile(existingUser);
+        const [userProfile, checkUpperGeo] = await Promise.all([
+          this.userService.getUserProfile(existingUser),
+          this.geographicEntityRepository.fetchUpperHierarchy(
+            existingUser.villageId,
+          ),
+        ]);
+
         const token = await this.jwtService.generateToken(userProfile);
-        const userTokenCheck = await this.userCredentialRepository.findOne({
-          where: {
-            userId: existingUser.id,
-          },
+
+        const credential = await this.userCredentialRepository.findOne({
+          where: {userId: existingUser.id},
         });
-        if (userTokenCheck) {
-          await this.userRepository
-            .userCredential(existingUser.id)
-            .patch({token: token});
+
+        if (credential) {
+          await this.userCredentialRepository.updateById(credential.id, {
+            token,
+          });
         } else {
           await this.userRepository
             .userCredential(existingUser.id)
-            .create({token: token});
+            .create({token});
         }
-        const checkUpperGeo =
-          await this.geographicEntityRepository.fetchUpperHierarchy(
-            existingUser.villageId,
-          );
 
         return {
           statusCode: 200,
@@ -128,14 +131,14 @@ export class UserController {
     }
 
     user.status = 'waiting';
-    const userData = await this.userRepository.create(user);
 
+    const userData = await this.userRepository.create(user);
     await this.userRepository.userCredential(userData.id).create({});
 
     return {
       statusCode: 201,
       message: 'User added. Please contact the administrator for approval.',
-      data: userData,
+      data: {id: userData.id, name: userData.name, phone: userData.phone},
     };
   }
 
