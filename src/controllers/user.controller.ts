@@ -18,17 +18,14 @@ import {
   GeographicEntityRepository,
   PitRepository,
   UserCodeRepository,
+  UserCredentialRepository,
   UserRepository,
   WellRepository,
 } from '../repositories';
 import {PasswordHasher} from '../services/hash.password.bcryptjs';
 import {TokenService} from '../services/jwt-service';
 import {MyUserService} from '../services/user-service';
-import {
-  PhoneNumber,
-  phoneRequestBody,
-  UserProfileSchema,
-} from '../utils/type-schema';
+import {UserProfileSchema} from '../utils/type-schema';
 
 export class UserController {
   constructor(
@@ -60,6 +57,9 @@ export class UserController {
 
     @repository(GeographicEntityRepository)
     public geographicEntityRepository: GeographicEntityRepository,
+
+    @repository(UserCredentialRepository)
+    public userCredentialRepository: UserCredentialRepository,
   ) {}
 
   @post('/users')
@@ -88,7 +88,20 @@ export class UserController {
       if (existingUser.status === 'active') {
         const userProfile = await this.userService.getUserProfile(existingUser);
         const token = await this.jwtService.generateToken(userProfile);
-
+        const userTokenCheck = await this.userCredentialRepository.findOne({
+          where: {
+            userId: existingUser.id,
+          },
+        });
+        if (userTokenCheck) {
+          await this.userRepository
+            .userCredential(existingUser.id)
+            .patch({token: token});
+        } else {
+          await this.userRepository
+            .userCredential(existingUser.id)
+            .create({token: token});
+        }
         const checkUpperGeo =
           await this.geographicEntityRepository.fetchUpperHierarchy(
             existingUser.villageId,
@@ -117,9 +130,7 @@ export class UserController {
     user.status = 'waiting';
     const userData = await this.userRepository.create(user);
 
-    await this.userRepository
-      .userCredential(userData.id)
-      .create({phone: user.phone});
+    await this.userRepository.userCredential(userData.id).create({});
 
     return {
       statusCode: 201,
@@ -128,7 +139,7 @@ export class UserController {
     };
   }
 
-  @post('/login', {
+  @post('/log-out', {
     responses: {
       '200': {
         description: 'Token',
@@ -147,20 +158,23 @@ export class UserController {
       },
     },
   })
-  async otpLogin(
-    @requestBody(phoneRequestBody) phoneNumber: PhoneNumber,
+  @authenticate('jwt')
+  async logOut(
+    @inject(SecurityBindings.USER)
+    currentUserProfile: UserProfile,
   ): Promise<any> {
-    const user = await this.userService.checkPhoneNumber(phoneNumber.phone);
-    const userProfile = await this.userService.getUserProfile(user);
-    const token = await this.jwtService.generateToken(userProfile);
+    const userId = currentUserProfile[securityId];
+    const userData = await this.userCredentialRepository.findOne({
+      where: {
+        userId: userId,
+      },
+    });
+    if (userData) {
+      await this.userCredentialRepository.deleteById(userData.id);
+    }
     return {
       statusCode: 200,
-      message: 'Authentication successful',
-      data: {
-        id: user.id,
-        name: user.name,
-        token: token,
-      },
+      message: 'User logged out successfully',
     };
   }
 
