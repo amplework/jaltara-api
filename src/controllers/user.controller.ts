@@ -181,7 +181,6 @@ export class UserController {
     credentials: Credentials,
   ): Promise<any> {
     const user = await this.userService.verifyCredentials(credentials);
-    console.log('user-->', user);
     if (user) {
       const userProfile = await this.userService.getUserProfile(user);
       const token = await this.jwtService.generateToken(userProfile);
