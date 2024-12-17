@@ -1,6 +1,7 @@
 import {UserService} from '@loopback/authentication';
 import {inject} from '@loopback/context';
 import {repository} from '@loopback/repository';
+import {HttpErrors} from '@loopback/rest';
 import {securityId, UserProfile} from '@loopback/security';
 import {PasswordHasherBindings} from '../keys';
 import {User} from '../models/user.model';
@@ -15,7 +16,37 @@ export class MyUserService implements UserService<User, Credentials> {
     @inject(PasswordHasherBindings.PASSWORD_HASHER)
     public passwordHasher: PasswordHasher,
   ) {}
-  async verifyCredentials(credentials: Credentials): Promise<any> {}
+  async verifyCredentials(credentials: Credentials): Promise<User> {
+    const invalidCredentialsError = 'Invalid Credentials.';
+    const foundUser = await this.userRepository.findOne({
+      where: {
+        email: credentials.email,
+      },
+    });
+
+    if (!foundUser) {
+      throw new HttpErrors.Unauthorized(invalidCredentialsError);
+    }
+
+    const userCredential = await this.userRepository.findCredentials(
+      foundUser.id,
+    );
+
+    if (!userCredential) {
+      throw new HttpErrors.Unauthorized(invalidCredentialsError);
+    }
+
+    const passwordMatched = await this.passwordHasher.comparePassword(
+      credentials.password,
+      userCredential.password,
+    );
+
+    if (!passwordMatched) {
+      throw new HttpErrors.Unauthorized(invalidCredentialsError);
+    }
+
+    return foundUser;
+  }
 
   convertToUserProfile(user: User): UserProfile {
     const userProfile = {

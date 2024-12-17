@@ -25,7 +25,7 @@ import {
 import {PasswordHasher} from '../services/hash.password.bcryptjs';
 import {TokenService} from '../services/jwt-service';
 import {MyUserService} from '../services/user-service';
-import {UserProfileSchema} from '../utils/type-schema';
+import {Credentials, UserProfileSchema} from '../utils/type-schema';
 
 export class UserController {
   constructor(
@@ -140,6 +140,81 @@ export class UserController {
       message: 'User added. Please contact the administrator for approval.',
       data: {id: userData.id, name: userData.name, phone: userData.phone},
     };
+  }
+
+  @post('/admin-login', {
+    responses: {
+      '200': {
+        description: 'Token',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                token: {
+                  type: 'string',
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  async adminLogin(
+    @requestBody({
+      description: 'User credentials',
+      required: true,
+      content: {
+        'application/json': {
+          schema: {
+            type: 'object',
+            properties: {
+              email: {type: 'string'},
+              password: {type: 'string'},
+            },
+            required: ['email', 'password'],
+          },
+        },
+      },
+    })
+    credentials: Credentials,
+  ): Promise<any> {
+    const user = await this.userService.verifyCredentials(credentials);
+    console.log('user-->', user);
+    if (user) {
+      const userProfile = await this.userService.getUserProfile(user);
+      const token = await this.jwtService.generateToken(userProfile);
+      const credential = await this.userCredentialRepository.findOne({
+        where: {userId: userProfile.id},
+      });
+
+      if (credential) {
+        await this.userCredentialRepository.updateById(credential.id, {
+          token,
+        });
+      } else {
+        const password = await this.passwordHasher.hashPassword(
+          credentials.password,
+        );
+        await this.userRepository
+          .userCredential(userProfile.id)
+          .create({token: token, password: password});
+      }
+      return {
+        statusCode: 200,
+        message: 'Authentication successful',
+        data: {
+          id: user.id,
+          token: token,
+        },
+      };
+    } else {
+      return {
+        statusCode: 422,
+        message: 'Wrong user credentials',
+      };
+    }
   }
 
   @post('/log-out', {

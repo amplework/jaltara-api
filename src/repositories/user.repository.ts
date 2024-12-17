@@ -3,9 +3,17 @@ import {
   BelongsToAccessor,
   DefaultCrudRepository,
   HasManyRepositoryFactory,
-  repository, HasOneRepositoryFactory} from '@loopback/repository';
+  HasOneRepositoryFactory,
+  repository,
+} from '@loopback/repository';
 import {DbDataSource} from '../datasources';
-import {GeographicEntity, Stage, User, UserRelations, UserCredential} from '../models';
+import {
+  GeographicEntity,
+  Stage,
+  User,
+  UserCredential,
+  UserRelations,
+} from '../models';
 import {GeographicEntityRepository} from './geographic-entity.repository';
 import {StageRepository} from './stage.repository';
 import {UserCredentialRepository} from './user-credential.repository';
@@ -25,7 +33,10 @@ export class UserRepository extends DefaultCrudRepository<
     typeof User.prototype.id
   >;
 
-  public readonly userCredential: HasOneRepositoryFactory<UserCredential, typeof User.prototype.id>;
+  public readonly userCredential: HasOneRepositoryFactory<
+    UserCredential,
+    typeof User.prototype.id
+  >;
 
   constructor(
     @inject('datasources.db') dataSource: DbDataSource,
@@ -37,8 +48,14 @@ export class UserRepository extends DefaultCrudRepository<
     protected stageRepositoryGetter: Getter<StageRepository>,
   ) {
     super(User, dataSource);
-    this.userCredential = this.createHasOneRepositoryFactoryFor('userCredential', userCredentialRepositoryGetter);
-    this.registerInclusionResolver('userCredential', this.userCredential.inclusionResolver);
+    this.userCredential = this.createHasOneRepositoryFactoryFor(
+      'userCredential',
+      userCredentialRepositoryGetter,
+    );
+    this.registerInclusionResolver(
+      'userCredential',
+      this.userCredential.inclusionResolver,
+    );
     this.stages = this.createHasManyRepositoryFactoryFor(
       'stages',
       stageRepositoryGetter,
@@ -59,5 +76,18 @@ export class UserRepository extends DefaultCrudRepository<
       },
     };
     return this.dataSource.connector?.collection('User').find(filter).toArray();
+  }
+
+  async findCredentials(
+    userId: typeof User.prototype.id,
+  ): Promise<UserCredential | undefined> {
+    try {
+      return await this.userCredential(userId).get();
+    } catch (err: any) {
+      if (err && err.code === 'ENTITY_NOT_FOUND') {
+        return undefined;
+      }
+      throw err;
+    }
   }
 }
