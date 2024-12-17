@@ -8,6 +8,7 @@ import {
   del,
   get,
   getModelSchemaRef,
+  HttpErrors,
   param,
   patch,
   post,
@@ -244,6 +245,11 @@ export class GeographicController {
     })
     geographicEntity: GeographicEntity,
   ): Promise<any> {
+    if (geographicEntity.parentId === id) {
+      throw new HttpErrors.NotFound(
+        `Village parent ID can not be same as village ID`,
+      );
+    }
     await this.geographicEntityRepository.updateById(id, geographicEntity);
     return {
       statusCode: 200,
