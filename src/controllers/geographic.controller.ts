@@ -132,30 +132,40 @@ export class GeographicController {
       },
     });
 
-    const enrichedData = await Promise.all(
-      data.map(async geo => {
-        const checkUpperGeo =
-          await this.geographicEntityRepository.fetchUpperHierarchy(geo.id);
-        if (!checkUpperGeo) return null;
+    console.log('entityType', entityType);
 
-        const farmerCount = await this.geographicEntityRepository
-          .farmers(geo.id)
-          .find({})
-          .then(farmers => farmers.length);
+    if (entityType === 'state') {
+      return {
+        statusCode: 200,
+        message: "State's list",
+        data: data,
+      };
+    } else {
+      const enrichedData = await Promise.all(
+        data.map(async geo => {
+          const checkUpperGeo =
+            await this.geographicEntityRepository.fetchUpperHierarchy(geo.id);
+          if (!checkUpperGeo) return null;
 
-        return {
-          ...geo,
-          checkUpperGeo,
-          farmerCount,
-        };
-      }),
-    );
+          const farmerCount = await this.geographicEntityRepository
+            .farmers(geo.id)
+            .find({})
+            .then(farmers => farmers.length);
 
-    return {
-      statusCode: 200,
-      message: "Village's list",
-      data: enrichedData,
-    };
+          return {
+            ...geo,
+            checkUpperGeo,
+            farmerCount,
+          };
+        }),
+      );
+
+      return {
+        statusCode: 200,
+        message: "Village's list",
+        data: enrichedData,
+      };
+    }
   }
 
   @get('/locations/{id}')
