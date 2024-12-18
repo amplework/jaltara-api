@@ -34,6 +34,7 @@ export class MyUserService implements UserService<User, Credentials> {
 
     if (!userCredential) {
       throw new HttpErrors.Unauthorized(invalidCredentialsError);
+    } else {
     }
 
     const passwordMatched = await this.passwordHasher.comparePassword(

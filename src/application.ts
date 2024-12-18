@@ -22,6 +22,7 @@ import {
 } from './keys';
 import {MyAuthenticationSequence} from './sequence';
 import {BcryptHasher} from './services/hash.password.bcryptjs';
+import {ImageService} from './services/image-service';
 import {JWTService} from './services/jwt-service';
 import {MyUserService} from './services/user-service';
 
@@ -70,6 +71,9 @@ export class JaltaraApplication extends BootMixin(
 
     //bind user services
     this.bind(UserServiceBindings.USER_SERVICE).toClass(MyUserService);
+
+    // Bind the ImageService
+    this.bind('services.ImageService').toClass(ImageService);
 
     // bind token services
     this.bind(TokenServiceBindings.TOKEN_SECRET).to(

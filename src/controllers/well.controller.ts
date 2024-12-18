@@ -9,17 +9,19 @@ import {
   param,
   patch,
   post,
+  Request,
   requestBody,
   response,
+  RestBindings,
 } from '@loopback/rest';
 import {SecurityBindings, securityId, UserProfile} from '@loopback/security';
-import _ from 'lodash';
 import {Well} from '../models';
 import {
   GeographicEntityRepository,
   StageRepository,
   WellRepository,
 } from '../repositories';
+import {ImageService} from '../services/image-service';
 
 export class WellController {
   constructor(
@@ -31,6 +33,8 @@ export class WellController {
 
     @repository(StageRepository)
     public stageRepository: StageRepository,
+
+    @inject('services.ImageService') private imageService: ImageService,
   ) {}
 
   @post('/wells')
@@ -53,7 +57,9 @@ export class WellController {
     well: Omit<Well, 'id'>,
     @inject(SecurityBindings.USER)
     currentUserProfile: UserProfile,
+    @inject(RestBindings.Http.REQUEST) request: Request,
   ): Promise<any> {
+    const userId = currentUserProfile[securityId];
     if (!well.villageId) {
       throw new HttpErrors.UnprocessableEntity('villageId is missing');
     }
@@ -64,31 +70,31 @@ export class WellController {
     if (!villageData) {
       throw new HttpErrors.NotFound(`Village ${well.villageId} does not exist`);
     }
-
-    const userId = currentUserProfile[securityId];
-
+    console.log('start--------->');
+    const imageData = await this.imageService.uploadImage(request);
     well.villageId = villageData.id;
+    console.log('payload', well);
+    console.log('imageData', imageData);
 
-    const newWellData = _.omit(well, ['equipmentId']);
-    const createdWell = await this.wellRepository.create(newWellData);
-    console.log('new well created', createdWell.id);
-    if (createdWell.id) {
-      const stageData = {
-        wellId: createdWell.id,
-        stageName: 'maintenance',
-        maintenanceType: 'mini maintenance',
-        briefMaintenance: 'well maintenance',
-        photo: well.photo,
-        updatedBy: userId,
-        equipmentId: well.equipmentId,
-      };
-      await this.stageRepository.create(stageData);
-    }
-    return {
-      statusCode: 201,
-      message: 'Well added successfully',
-      data: createdWell,
-    };
+    // const newWellData = _.omit(well, ['equipmentId']);
+    // const createdWell = await this.wellRepository.create(newWellData);
+    // if (createdWell.id) {
+    //   const stageData = {
+    //     wellId: createdWell.id,
+    //     stageName: 'maintenance',
+    //     maintenanceType: 'mini maintenance',
+    //     briefMaintenance: 'well maintenance',
+    //     photo: well.photo,
+    //     updatedBy: userId,
+    //     equipmentId: well.equipmentId,
+    //   };
+    //   await this.stageRepository.create(stageData);
+    // }
+    // return {
+    //   statusCode: 201,
+    //   message: 'Well added successfully',
+    //   data: createdWell,
+    // };
   }
 
   @get('/wells')
