@@ -1,3 +1,5 @@
+import express from 'express';
+import path from 'path';
 import {ApplicationConfig, JaltaraApplication} from './application';
 
 export * from './application';
@@ -7,9 +9,33 @@ export async function main(options: ApplicationConfig = {}) {
   await app.boot();
   await app.start();
 
+  const expressApp = express();
   const url = app.restServer.url;
-  console.log(`Server is running at ${url}`);
-  console.log(`Try ${url}/ping`);
+
+  // Serve static files from the "public" directory
+  const staticDir = path.resolve(__dirname, '../public');
+  expressApp.use(express.static(staticDir));
+
+  // Fallback route to serve index.html for SPA
+  expressApp.get('*', (req, res) => {
+    res.sendFile(path.join(staticDir, 'index.html'));
+  });
+
+  // Mount the LoopBack REST API onto the Express app
+  const restApiPath = '/api'; // Base path for REST API
+  expressApp.use(restApiPath, app.requestHandler);
+
+  // Start the Express server
+  const expressPort = 4000; // Port for serving static files
+  const port = options.rest?.port || 3000; // Port for REST API
+  const host = options.rest?.host || 'localhost';
+
+  // Start Express server
+  expressApp.listen(expressPort, host, () => {
+    console.log(`Admin interface served at http://${host}:${expressPort}`);
+  });
+
+  console.log(`REST API is running at ${url}${restApiPath}`);
 
   return app;
 }
@@ -20,14 +46,8 @@ if (require.main === module) {
     rest: {
       port: +(process.env.PORT ?? 3000),
       host: process.env.HOST,
-      // The `gracePeriodForClose` provides a graceful close for http/https
-      // servers with keep-alive clients. The default value is `Infinity`
-      // (don't force-close). If you want to immediately destroy all sockets
-      // upon stop, set its value to `0`.
-      // See https://www.npmjs.com/package/stoppable
       gracePeriodForClose: 5000, // 5 seconds
       openApiSpec: {
-        // useful when used with OpenAPI-to-GraphQL to locate your application
         setServersFromRequest: true,
       },
     },
