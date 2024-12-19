@@ -85,61 +85,70 @@ export class UserController {
       fields: {id: true, name: true, status: true, villageId: true},
     });
 
+    const generateAuthResponse = async (
+      userData: User,
+      message: string,
+      villageId: string,
+    ) => {
+      const userProfile = await this.userService.getUserProfile(userData);
+      const token = await this.jwtService.generateToken(userProfile);
+
+      const credential = await this.userCredentialRepository.findOne({
+        where: {userId: userData.id},
+      });
+      if (credential) {
+        await this.userCredentialRepository.updateById(credential.id, {token});
+      } else {
+        await this.userRepository.userCredential(userData.id).create({token});
+      }
+
+      return {
+        statusCode: 200,
+        message,
+        data: {
+          id: userData.id,
+          name: userData.name,
+          token,
+          villageId,
+        },
+      };
+    };
+
     if (existingUser) {
       if (existingUser.status === 'active') {
-        const [userProfile, checkUpperGeo] = await Promise.all([
-          this.userService.getUserProfile(existingUser),
-          this.geographicEntityRepository.fetchUpperHierarchy(
+        const checkUpperGeograph =
+          await this.geographicEntityRepository.fetchUpperHierarchy(
             existingUser.villageId,
-          ),
-        ]);
+          );
 
-        const token = await this.jwtService.generateToken(userProfile);
+        const checkUpperGeo =
+          checkUpperGeograph?.id || '111111111111111111111111';
 
-        const credential = await this.userCredentialRepository.findOne({
-          where: {userId: existingUser.id},
-        });
-
-        if (credential) {
-          await this.userCredentialRepository.updateById(credential.id, {
-            token,
-          });
-        } else {
-          await this.userRepository
-            .userCredential(existingUser.id)
-            .create({token});
-        }
-
-        return {
-          statusCode: 200,
-          message: 'Authentication successful',
-          data: {
-            id: existingUser.id,
-            name: existingUser.name,
-            token,
-            loaction: checkUpperGeo,
-          },
-        };
+        return generateAuthResponse(
+          existingUser,
+          'Authentication successful',
+          checkUpperGeo,
+        );
       }
 
       if (existingUser.status === 'waiting') {
-        return {
-          statusCode: 422,
-          message: 'User is waiting for administrator approval.',
-        };
+        return generateAuthResponse(
+          existingUser,
+          'Authentication successful, Use testing Jaltara village until administrator approves',
+          '111111111111111111111111',
+        );
       }
     }
 
     user.status = 'waiting';
+    const newUser = await this.userRepository.create(user);
+    await this.userRepository.userCredential(newUser.id).create({});
 
-    const userData = await this.userRepository.create(user);
-    await this.userRepository.userCredential(userData.id).create({});
-
-    return {
-      statusCode: 201,
-      message: 'User added. Please contact the administrator for approval.',
-      data: {id: userData.id, name: userData.name, phone: userData.phone},
-    };
+    return generateAuthResponse(
+      newUser,
+      'Sevek add request for administrator. Until then, use testing Jaltara village',
+      '111111111111111111111111',
+    );
   }
 
   @post('/admin-login', {
