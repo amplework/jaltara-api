@@ -16,14 +16,18 @@ export async function main(options: ApplicationConfig = {}) {
   const staticDir = path.resolve(__dirname, '../public');
   expressApp.use(express.static(staticDir));
 
-  // Fallback route to serve index.html for SPA
-  expressApp.get('*', (req, res) => {
-    res.sendFile(path.join(staticDir, 'index.html'));
-  });
-
   // Mount the LoopBack REST API onto the Express app
   const restApiPath = '/api'; // Base path for REST API
   expressApp.use(restApiPath, app.requestHandler);
+
+  // Fallback route to serve index.html for frontend SPA routes
+  expressApp.use((req, res, next) => {
+    if (!req.path.startsWith(restApiPath)) {
+      res.sendFile(path.join(staticDir, 'index.html'));
+    } else {
+      next();
+    }
+  });
 
   // Start the Express server
   const expressPort = 4000; // Port for serving static files
