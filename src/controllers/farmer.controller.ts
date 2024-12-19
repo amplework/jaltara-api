@@ -1,3 +1,5 @@
+import {authenticate} from '@loopback/authentication';
+import {inject} from '@loopback/core';
 import {AnyObject, repository} from '@loopback/repository';
 import {
   del,
@@ -9,6 +11,7 @@ import {
   requestBody,
   response,
 } from '@loopback/rest';
+import {SecurityBindings, UserProfile} from '@loopback/security';
 import {Farmer} from '../models';
 import {
   FarmerRepository,
@@ -33,6 +36,7 @@ export class FarmerController {
     description: 'Farmer model instance',
     content: {'application/json': {schema: getModelSchemaRef(Farmer)}},
   })
+  @authenticate('jwt')
   async create(
     @requestBody({
       content: {
@@ -45,6 +49,8 @@ export class FarmerController {
       },
     })
     farmer: Omit<Farmer, 'id'>,
+    @inject(SecurityBindings.USER)
+    currentUserProfile: UserProfile,
   ): Promise<AnyObject> {
     const phoneExists = await this.farmerRepository.findOne({
       where: {
@@ -78,7 +84,10 @@ export class FarmerController {
       },
     },
   })
+  @authenticate('jwt')
   async find(
+    @inject(SecurityBindings.USER)
+    currentUserProfile: UserProfile,
     @param.query.string('name') name?: string,
     @param.query.string('villageName') villageName?: string,
   ): Promise<any> {
@@ -135,7 +144,12 @@ export class FarmerController {
       },
     },
   })
-  async findById(@param.path.string('id') id: string): Promise<AnyObject> {
+  @authenticate('jwt')
+  async findById(
+    @param.path.string('id') id: string,
+    @inject(SecurityBindings.USER)
+    currentUserProfile: UserProfile,
+  ): Promise<AnyObject> {
     const farmerData = await this.farmerRepository.findById(id, {
       include: [
         {

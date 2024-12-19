@@ -1,8 +1,10 @@
 import {inject} from '@loopback/context';
+import {repository} from '@loopback/repository';
 import {HttpErrors} from '@loopback/rest';
 import {securityId, UserProfile} from '@loopback/security';
 import {promisify} from 'util';
 import {TokenServiceBindings} from '../keys';
+import {UserCredentialRepository} from '../repositories';
 
 const jwt = require('jsonwebtoken');
 const signAsync = promisify(jwt.sign);
@@ -18,6 +20,8 @@ export class JWTService implements TokenService {
   constructor(
     @inject(TokenServiceBindings.TOKEN_SECRET) private jwtSecret: string,
     @inject(TokenServiceBindings.TOKEN_EXPIRES_IN) private jwtExpiresIn: string,
+    @repository(UserCredentialRepository)
+    public userCredentialRepository: UserCredentialRepository,
   ) {}
 
   async verifyToken(token: string): Promise<UserProfile> {
@@ -29,14 +33,23 @@ export class JWTService implements TokenService {
     let userProfile: UserProfile;
     try {
       const decodedToken = await verifyAsync(token, this.jwtSecret);
-      userProfile = Object.assign(
-        {[securityId]: '', name: ''},
-        {
-          [securityId]: decodedToken.id,
-          name: decodedToken.name,
-          id: decodedToken.id,
+      const userCred = await this.userCredentialRepository.findOne({
+        where: {
+          userId: decodedToken.id,
         },
-      );
+      });
+      if (userCred) {
+        userProfile = Object.assign(
+          {[securityId]: '', name: ''},
+          {
+            [securityId]: decodedToken.id,
+            name: decodedToken.name,
+            id: decodedToken.id,
+          },
+        );
+      } else {
+        throw new HttpErrors.Gone(`Error verifying token`);
+      }
     } catch (error) {
       throw new HttpErrors.Gone(`Error verifying token : ${error.message}`);
     }
@@ -75,7 +88,6 @@ export class JWTService implements TokenService {
     const userInfoForToken = {
       id: userProfile[securityId],
       name: userProfile.name,
-      role: userProfile.role,
     };
 
     let token: string,
