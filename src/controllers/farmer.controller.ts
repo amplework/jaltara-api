@@ -135,6 +135,135 @@ export class FarmerController {
     };
   }
 
+  @get('/admin-farmers')
+  @response(200, {
+    description: 'Array of Farmer model instances',
+    content: {
+      'application/json': {
+        schema: {
+          type: 'array',
+          items: getModelSchemaRef(Farmer, {includeRelations: true}),
+        },
+      },
+    },
+  })
+  async findFarmers(
+    @param.query.string('name') name?: string,
+    @param.query.string('villageName') villageName?: string,
+  ): Promise<any> {
+    const data = await this.farmerRepository.find({
+      where: {
+        name: name,
+      },
+      order: ['created DESC'],
+      include: [
+        {
+          relation: 'pits',
+          scope: {
+            fields: {
+              id: true,
+              farmerId: true,
+            },
+          },
+        },
+        {
+          relation: 'village',
+          scope: {
+            fields: {
+              id: true,
+              name: true,
+            },
+            where: {
+              name: villageName,
+            },
+          },
+        },
+      ],
+    });
+
+    const enrichedData = data.map(farmer => ({
+      ...farmer,
+      totalPits: farmer.pits?.length || 0,
+    }));
+
+    const filteredData = enrichedData.filter((item: any) => item.village);
+
+    return {
+      statusCode: 200,
+      message: "Farmer's list",
+      data: filteredData,
+    };
+  }
+
+  @get('/admin-farmers/{id}')
+  @response(200, {
+    description: 'Farmer model instance',
+    content: {
+      'application/json': {
+        schema: getModelSchemaRef(Farmer, {includeRelations: true}),
+      },
+    },
+  })
+  async findFarmerById(
+    @param.path.string('id') id: string,
+  ): Promise<AnyObject> {
+    const farmerData = await this.farmerRepository.findById(id, {
+      include: [
+        {
+          relation: 'pits',
+          scope: {
+            fields: {
+              id: true,
+              pitId: true,
+              photo: true,
+              plotSize: true,
+              level: true,
+              farmerId: true,
+              villageId: true,
+            },
+            include: [
+              {
+                relation: 'stages',
+                scope: {
+                  include: [
+                    {
+                      relation: 'updatedbySevek',
+                      scope: {
+                        fields: {
+                          id: true,
+                          name: true,
+                        },
+                      },
+                    },
+                  ],
+                  order: ['created DESC'],
+                  limit: 1,
+                },
+              },
+            ],
+          },
+        },
+        {relation: 'village'},
+      ],
+    });
+
+    const response: AnyObject = {
+      statusCode: 200,
+      message: 'Farmer details',
+      data: farmerData,
+    };
+
+    if (farmerData.villageId) {
+      const checkUpperGeo =
+        await this.geographicEntityRepository.fetchUpperHierarchy(
+          farmerData.villageId,
+        );
+      response.data = {...farmerData, checkUpperGeo};
+    }
+
+    return response;
+  }
+
   @get('/farmers/{id}')
   @response(200, {
     description: 'Farmer model instance',
