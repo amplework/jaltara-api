@@ -85,10 +85,16 @@ export class UserController {
       fields: {id: true, name: true, status: true, villageId: true},
     });
 
+    const location = await this.geographicEntityRepository.findOne({
+      where: {
+        name: 'Jaltara-Test-Village',
+      },
+    });
+
     const generateAuthResponse = async (
       userData: User,
       message: string,
-      villageId: string,
+      loaction: any,
     ) => {
       const userProfile = await this.userService.getUserProfile(userData);
       const token = await this.jwtService.generateToken(userProfile);
@@ -109,25 +115,22 @@ export class UserController {
           id: userData.id,
           name: userData.name,
           token,
-          villageId,
+          loaction,
         },
       };
     };
 
     if (existingUser) {
       if (existingUser.status === 'active') {
-        const checkUpperGeograph =
+        const loaction =
           await this.geographicEntityRepository.fetchUpperHierarchy(
             existingUser.villageId,
           );
 
-        const checkUpperGeo =
-          checkUpperGeograph?.id || '111111111111111111111111';
-
         return generateAuthResponse(
           existingUser,
           'Authentication successful',
-          checkUpperGeo,
+          loaction,
         );
       }
 
@@ -135,7 +138,7 @@ export class UserController {
         return generateAuthResponse(
           existingUser,
           'Authentication successful, Use testing Jaltara village until administrator approves',
-          '111111111111111111111111',
+          location,
         );
       }
     }
@@ -147,7 +150,7 @@ export class UserController {
     return generateAuthResponse(
       newUser,
       'Sevek add request for administrator. Until then, use testing Jaltara village',
-      '111111111111111111111111',
+      location,
     );
   }
 
