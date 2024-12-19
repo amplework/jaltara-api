@@ -20,6 +20,7 @@ import {
   PitRepository,
   StageRepository,
   UserCodeRepository,
+  UserCredentialRepository,
   UserRepository,
   WellRepository,
 } from '../repositories';
@@ -60,6 +61,9 @@ export class AdminController {
 
     @repository(StageRepository)
     public stageRepository: StageRepository,
+
+    @repository(UserCredentialRepository)
+    public userCredentialRepository: UserCredentialRepository,
   ) {}
 
   @post('/sevak-add')
@@ -178,9 +182,6 @@ export class AdminController {
     if (villageName) {
       includeCondition.scope.where.name = {villageName, $options: 'i'};
     }
-    console.log(includeCondition);
-    console.log(whereCondition);
-
     const data = await this.userRepository.find({
       order: ['created DESC'],
       where: whereCondition,
@@ -358,6 +359,11 @@ export class AdminController {
 
     if (user.villageId) {
       await this.geographicEntityRepository.findById(user.villageId);
+    }
+    if (user.status === 'active') {
+      await this.userCredentialRepository.deleteAll({
+        userId: id,
+      });
     }
     await this.userRepository.updateById(id, user);
     return {
