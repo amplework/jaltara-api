@@ -12,12 +12,12 @@ import {
   Log,
   Pit,
   PitRelations,
-  Stage,
-} from '../models';
+  Stage, ImageUpload} from '../models';
 import {FarmerRepository} from './farmer.repository';
 import {GeographicEntityRepository} from './geographic-entity.repository';
 import {LogRepository} from './log.repository';
 import {StageRepository} from './stage.repository';
+import {ImageUploadRepository} from './image-upload.repository';
 
 export class PitRepository extends DefaultCrudRepository<
   Pit,
@@ -38,6 +38,8 @@ export class PitRepository extends DefaultCrudRepository<
     typeof Pit.prototype.id
   >;
 
+  public readonly images: HasManyRepositoryFactory<ImageUpload, typeof Pit.prototype.id>;
+
   constructor(
     @inject('datasources.db') dataSource: DbDataSource,
     @repository.getter('FarmerRepository')
@@ -47,9 +49,11 @@ export class PitRepository extends DefaultCrudRepository<
     @repository.getter('LogRepository')
     protected logRepositoryGetter: Getter<LogRepository>,
     @repository.getter('GeographicEntityRepository')
-    protected geographicEntityRepositoryGetter: Getter<GeographicEntityRepository>,
+    protected geographicEntityRepositoryGetter: Getter<GeographicEntityRepository>, @repository.getter('ImageUploadRepository') protected imageUploadRepositoryGetter: Getter<ImageUploadRepository>,
   ) {
     super(Pit, dataSource);
+    this.images = this.createHasManyRepositoryFactoryFor('images', imageUploadRepositoryGetter,);
+    this.registerInclusionResolver('images', this.images.inclusionResolver);
     this.village = this.createBelongsToAccessorFor(
       'village',
       geographicEntityRepositoryGetter,

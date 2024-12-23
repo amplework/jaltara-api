@@ -16,11 +16,17 @@ export class S3Service {
   }
 
   async uploadImage(
-    bucketName: string,
     fileName: string,
     fileContent: Buffer,
     contentType: string,
   ): Promise<AWS.S3.ManagedUpload.SendData> {
+    const bucketName = process.env.AWS_BUCKET_NAME;
+    if (!bucketName) {
+      throw new Error(
+        'AWS S3 bucket name is not defined in environment variables.',
+      );
+    }
+
     const params = {
       Bucket: bucketName,
       Key: `images/${fileName}`,

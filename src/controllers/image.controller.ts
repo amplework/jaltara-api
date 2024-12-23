@@ -34,17 +34,9 @@ export class UploadController {
           throw new HttpErrors.BadRequest('No file was uploaded.');
         }
 
-        const bucketName = process.env.AWS_BUCKET_NAME;
-        if (!bucketName) {
-          throw new Error(
-            'AWS S3 bucket name is not defined in environment variables.',
-          );
-        }
-
         try {
           // Upload to S3
           const uploadResult = await this.s3Service.uploadImage(
-            bucketName,
             file.originalname + '-' + Date.now(),
             file.buffer,
             file.mimetype,

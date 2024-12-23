@@ -9,6 +9,7 @@ import {Farmer} from './farmer.model';
 import {Log} from './log.model';
 import {Stage} from './stage.model';
 import {GeographicEntity} from './geographic-entity.model';
+import {ImageUpload} from './image-upload.model';
 
 @model({settings: {strict: false}})
 export class Pit extends Entity {
@@ -79,6 +80,9 @@ export class Pit extends Entity {
 
   @belongsTo(() => GeographicEntity)
   villageId: string;
+
+  @hasMany(() => ImageUpload, {keyTo: 'moduleId'})
+  images: ImageUpload[];
   // Define well-known properties here
 
   // Indexer property to allow additional data
