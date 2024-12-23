@@ -12,6 +12,7 @@ import {
   RestExplorerComponent,
 } from '@loopback/rest-explorer';
 import {ServiceMixin} from '@loopback/service-proxy';
+import multer from 'multer';
 import path from 'path';
 import {DbDataSource} from './datasources';
 import {
@@ -22,9 +23,9 @@ import {
 } from './keys';
 import {MyAuthenticationSequence} from './sequence';
 import {BcryptHasher} from './services/hash.password.bcryptjs';
+import {S3Service} from './services/image-service';
 import {JWTService} from './services/jwt-service';
 import {MyUserService} from './services/user-service';
-
 export {ApplicationConfig};
 
 export class JaltaraApplication extends BootMixin(
@@ -84,5 +85,15 @@ export class JaltaraApplication extends BootMixin(
     // Bind bcrypt hash services
     this.bind(PasswordHasherBindings.ROUNDS).to(10);
     this.bind(PasswordHasherBindings.PASSWORD_HASHER).toClass(BcryptHasher);
+
+    this.bind('services.S3Service').toClass(S3Service);
+    this.configureFileUpload();
+  }
+
+  private configureFileUpload() {
+    const multerOptions: multer.Options = {
+      storage: multer.memoryStorage(),
+    };
+    this.bind('storage.fileStorage').to(multer(multerOptions));
   }
 }

@@ -59,6 +59,7 @@
     "@loopback/security": "^0.11.6",
     "@loopback/service-proxy": "^7.0.6",
     "authentication": "^0.0.4",
+    "aws-sdk": "^2.1692.0",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^2.5.1",
     "dotenv": "^16.4.5",

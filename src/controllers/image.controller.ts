@@ -1,73 +1,59 @@
 import {inject} from '@loopback/core';
-import {
-  HttpErrors,
-  post,
-  Request,
-  response,
-  RestBindings,
-} from '@loopback/rest';
-import {v2 as cloudinary} from 'cloudinary';
+import {HttpErrors, post, Request} from '@loopback/rest';
 import multer from 'multer';
+import {S3Service} from '../services/image-service';
 
-export class ImageController {
-  constructor() {
-    cloudinary.config({
-      cloud_name: 'dlvqdlv18',
-      api_key: '225167248643596',
-      api_secret: 'r6Zvmm_hCdSCVPL1GRKjizt6DtA',
-    });
-  }
+const storage = multer.memoryStorage();
+const upload = multer({storage});
 
-  @post('/upload-image')
-  @response(200, {
-    description: 'Upload Image to Cloudinary',
-    content: {'application/json': {schema: {type: 'object'}}},
+export class UploadController {
+  constructor(
+    @inject('services.S3Service') private s3Service: S3Service,
+    @inject('rest.http.request') private request: Request,
+  ) {}
+
+  @post('/image', {
+    responses: {
+      '200': {
+        description: 'Image upload response',
+        content: {'application/json': {schema: {type: 'object'}}},
+      },
+    },
   })
-  async uploadImage(
-    @inject(RestBindings.Http.REQUEST) request: Request,
-  ): Promise<object> {
-    try {
-      const upload = multer().single('image');
+  async image(): Promise<{url: string}> {
+    return new Promise((resolve, reject) => {
+      upload.single('file')(this.request, {} as any, async (err: any) => {
+        if (err) {
+          return reject(
+            new HttpErrors.BadRequest('Error processing file upload.'),
+          );
+        }
 
-      return new Promise((resolve, reject) => {
-        upload(request, {} as any, async (err: any) => {
-          if (err) {
-            console.error('Error during multer processing:', err);
-            reject(new HttpErrors.BadRequest('Error in file upload'));
-            return;
-          }
+        const file = (this.request as any).file;
+        if (!file) {
+          throw new HttpErrors.BadRequest('No file was uploaded.');
+        }
 
-          if (!request.file) {
-            reject(new HttpErrors.BadRequest('No file uploaded'));
-            return;
-          }
+        const bucketName = process.env.AWS_BUCKET_NAME;
+        if (!bucketName) {
+          throw new Error(
+            'AWS S3 bucket name is not defined in environment variables.',
+          );
+        }
 
-          const timestamp = new Date().toISOString().replace(/[-:.TZ]/g, '');
-          cloudinary.uploader
-            .upload_stream(
-              {public_id: `${timestamp}_${request.file.originalname}`},
-              async (error, result) => {
-                if (error) {
-                  reject(
-                    new HttpErrors.InternalServerError(
-                      'Error uploading to Cloudinary',
-                    ),
-                  );
-                  return;
-                }
-                resolve({
-                  statusCode: 200,
-                  message: 'photo uploaded successfully',
-                  data: result?.url,
-                });
-              },
-            )
-            .end(request.file.buffer);
-        });
+        try {
+          // Upload to S3
+          const uploadResult = await this.s3Service.uploadImage(
+            bucketName,
+            file.originalname + '-' + Date.now(),
+            file.buffer,
+            file.mimetype,
+          );
+          resolve({url: uploadResult.Location});
+        } catch (error) {
+          reject(error);
+        }
       });
-    } catch (error) {
-      console.error('Error:', error);
-      throw new HttpErrors.InternalServerError('Failed to process image');
-    }
+    });
   }
 }

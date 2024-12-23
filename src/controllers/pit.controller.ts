@@ -172,7 +172,7 @@ export class PitController {
     const data = await this.pitRepository.find(filter);
     const filteredData = data.filter(
       (item: any) =>
-        item.village &&
+        // item.village &&
         item.stages &&
         item.farmer &&
         item.stages.some((stage: any) => stage.updatedbySevek),
