@@ -109,6 +109,7 @@ export class WellController {
     const filter: any = {
       order: ['created DESC'],
       include: [
+        {relation: 'images'},
         {
           relation: 'village',
           scope: {

@@ -6,8 +6,16 @@ import {
   repository,
 } from '@loopback/repository';
 import {DbDataSource} from '../datasources';
-import {GeographicEntity, Log, Stage, Well, WellRelations} from '../models';
+import {
+  GeographicEntity,
+  ImageUpload,
+  Log,
+  Stage,
+  Well,
+  WellRelations,
+} from '../models';
 import {GeographicEntityRepository} from './geographic-entity.repository';
+import {ImageUploadRepository} from './image-upload.repository';
 import {LogRepository} from './log.repository';
 import {StageRepository} from './stage.repository';
 
@@ -28,6 +36,11 @@ export class WellRepository extends DefaultCrudRepository<
     typeof Well.prototype.id
   >;
 
+  public readonly images: HasManyRepositoryFactory<
+    ImageUpload,
+    typeof Well.prototype.id
+  >;
+
   constructor(
     @inject('datasources.db') dataSource: DbDataSource,
     @repository.getter('LogRepository')
@@ -36,8 +49,15 @@ export class WellRepository extends DefaultCrudRepository<
     protected geographicEntityRepositoryGetter: Getter<GeographicEntityRepository>,
     @repository.getter('StageRepository')
     protected stageRepositoryGetter: Getter<StageRepository>,
+    @repository.getter('ImageUploadRepository')
+    protected imageUploadRepositoryGetter: Getter<ImageUploadRepository>,
   ) {
     super(Well, dataSource);
+    this.images = this.createHasManyRepositoryFactoryFor(
+      'images',
+      imageUploadRepositoryGetter,
+    );
+    this.registerInclusionResolver('images', this.images.inclusionResolver);
     this.stages = this.createHasManyRepositoryFactoryFor(
       'stages',
       stageRepositoryGetter,

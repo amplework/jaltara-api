@@ -6,6 +6,7 @@ import {
   property,
 } from '@loopback/repository';
 import {GeographicEntity} from './geographic-entity.model';
+import {ImageUpload} from './image-upload.model';
 import {Log} from './log.model';
 import {Stage} from './stage.model';
 
@@ -60,6 +61,9 @@ export class Well extends Entity {
 
   @hasMany(() => Stage)
   stages: Stage[];
+
+  @hasMany(() => ImageUpload, {keyTo: 'moduleId'})
+  images: ImageUpload[];
   // Define well-known properties here
 
   // Indexer property to allow additional data
