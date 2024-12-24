@@ -1,7 +1,7 @@
-import {Entity, model, property, belongsTo} from '@loopback/repository';
+import {belongsTo, Entity, model, property} from '@loopback/repository';
 import {HttpErrors} from '@loopback/rest';
-import {User} from './user.model';
 import {Pit} from './pit.model';
+import {User} from './user.model';
 import {Well} from './well.model';
 
 @model({settings: {strict: false}})
@@ -12,6 +12,7 @@ export class Stage extends Entity {
     generated: true,
   })
   id?: string;
+
   @property({
     type: 'string',
     required: true,
@@ -23,7 +24,6 @@ export class Stage extends Entity {
 
   @property({
     type: 'string',
-    required: true,
   })
   photo: string;
 

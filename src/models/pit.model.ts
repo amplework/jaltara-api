@@ -6,10 +6,10 @@ import {
   property,
 } from '@loopback/repository';
 import {Farmer} from './farmer.model';
-import {Log} from './log.model';
-import {Stage} from './stage.model';
 import {GeographicEntity} from './geographic-entity.model';
 import {ImageUpload} from './image-upload.model';
+import {Log} from './log.model';
+import {Stage} from './stage.model';
 
 @model({settings: {strict: false}})
 export class Pit extends Entity {
@@ -24,12 +24,6 @@ export class Pit extends Entity {
     type: 'string',
   })
   pitId?: string;
-
-  @property({
-    type: 'string',
-    required: false,
-  })
-  photo: string;
 
   @property({
     type: 'string',
