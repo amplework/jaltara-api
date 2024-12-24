@@ -285,7 +285,13 @@ export class UserController {
     currentUserProfile: UserProfile,
   ): Promise<any> {
     const userId = currentUserProfile[securityId];
-    const userData = await this.userRepository.findById(userId);
+    const userData = await this.userRepository.findById(userId, {
+      include: [
+        {
+          relation: 'image',
+        },
+      ],
+    });
 
     const checkGeo = await this.geographicEntityRepository.fetchHierarchy(
       userData.villageId,

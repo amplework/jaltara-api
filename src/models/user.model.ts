@@ -2,6 +2,7 @@ import {belongsTo, Entity, model, property, hasMany, hasOne} from '@loopback/rep
 import {GeographicEntity} from './geographic-entity.model';
 import {Stage} from './stage.model';
 import {UserCredential} from './user-credential.model';
+import {ImageUpload} from './image-upload.model';
 
 @model({settings: {strict: false}})
 export class User extends Entity {
@@ -41,12 +42,6 @@ export class User extends Entity {
     type: 'string',
   })
   gender?: string;
-
-  @property({
-    type: 'string',
-  })
-  image?: string;
-
   @property({
     type: 'string',
     default: 'active',
@@ -85,6 +80,9 @@ export class User extends Entity {
 
   @hasOne(() => UserCredential)
   userCredential: UserCredential;
+
+  @hasOne(() => ImageUpload, {keyTo: 'moduleId'})
+  image: ImageUpload;
   // Define well-known properties here
 
   // Indexer property to allow additional data

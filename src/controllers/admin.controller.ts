@@ -208,6 +208,9 @@ export class AdminController {
     const userData = await this.userRepository.findById(id, {
       include: [
         {
+          relation: 'image',
+        },
+        {
           relation: 'stages',
           scope: {
             include: [
