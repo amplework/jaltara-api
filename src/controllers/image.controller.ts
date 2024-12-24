@@ -12,7 +12,7 @@ export class UploadController {
     @inject('rest.http.request') private request: Request,
   ) {}
 
-  @post('/image', {
+  @post('/upload-image', {
     responses: {
       '200': {
         description: 'Image upload response',
