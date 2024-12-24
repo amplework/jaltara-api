@@ -35,13 +35,23 @@ export class UploadController {
         }
 
         try {
-          // Upload to S3
           const uploadResult = await this.s3Service.uploadImage(
             file.originalname + '-' + Date.now(),
             file.buffer,
             file.mimetype,
           );
-          resolve({url: uploadResult.Location});
+
+          type UploadResponse = {
+            url: string;
+            statusCode?: number;
+            message?: string;
+          };
+
+          resolve({
+            statusCode: 201,
+            message: 'Image uploaded successfully',
+            url: uploadResult.Location,
+          } as UploadResponse);
         } catch (error) {
           reject(error);
         }
