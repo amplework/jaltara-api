@@ -71,7 +71,6 @@ export class WellController {
 
     const newWellData = _.omit(well, ['equipmentId']);
     const createdWell = await this.wellRepository.create(newWellData);
-    console.log('new well created', createdWell.id);
     if (createdWell.id) {
       const stageData = {
         wellId: createdWell.id,
