@@ -136,6 +136,8 @@ export class PitController {
               pitId: true,
               stageName: true,
               created: true,
+              maintenanceType: true,
+              briefMaintenance: true,
               updatedBy: true,
               equipmentId: true,
             },
