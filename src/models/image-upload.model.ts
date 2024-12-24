@@ -23,7 +23,6 @@ export class ImageUpload extends Entity {
 
   @property({
     type: 'string',
-    required: true,
   })
   moduleId: string;
 

@@ -59,9 +59,9 @@ export class ImageUploadController {
           throw new HttpErrors.BadRequest('No file was uploaded.');
         }
 
-        const {type, moduleId} = this.request.body;
+        const {type, moduleId, localId} = this.request.body;
 
-        if (!type || !moduleId) {
+        if (!type) {
           return reject(
             new HttpErrors.BadRequest('Missing required fields in form data.'),
           );
@@ -79,13 +79,13 @@ export class ImageUploadController {
             url: uploadResult.Location,
             type: type,
             moduleId: moduleId,
+            localId: localId,
             status: 'active',
           };
 
           const createdImage =
             await this.imageUploadRepository.create(imageUploadData);
 
-          // resolve(createdImage);
           resolve({
             statusCode: 201,
             message: 'Image uploaded successfully',
